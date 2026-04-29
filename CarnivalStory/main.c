@@ -12,7 +12,9 @@
 typedef enum {
     tela_menu,
     tela_batalha,
-    tela_animacao
+    tela_animacaoIntro,
+    tela_animacaoFinal,
+    tela_GameOver
 } Telas;
 
 //Enum é para representar uma escolha fixa (é um tipo de struct)
@@ -79,9 +81,9 @@ void UpdateGame(){
 
         case tela_menu:
             if (IsKeyPressed(KEY_ENTER)){
-                ModoDoJogo = tela_animacao;
+                ModoDoJogo = tela_animacaoIntro;
             }
-
+            
         break;
 
          //Aqui é o seguinte, sob os modos de jogo, se eu estiver no menu e pressionar a tecla ESC eu vou direto para a tela de animação
