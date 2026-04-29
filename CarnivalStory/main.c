@@ -1,6 +1,8 @@
 #include "raylib.h"
 #include <stdio.h>
 
+#define LARGURA_TELA 800
+#define ALTURA_TELA 600
 #define COORDENADA_CHAO 500
 #define INTENSIDADE_PULO -10.0f
 #define GRAVIDADE 0.5f
@@ -60,7 +62,7 @@ Inimigo inimigo;
 
 void InitGame(){
 
-    jogador.posicao = (Vector2){400, 300};
+    jogador.posicao = (Vector2){400, COORDENADA_CHAO}; //X = 400 (posição horizontal) e Y = COORDENADA_CHAO (começa no)
 
     //Coordenadas do jogador
 
@@ -86,9 +88,10 @@ void UpdateGame(){
             
         break;
 
-         //Aqui é o seguinte, sob os modos de jogo, se eu estiver no menu e pressionar a tecla ESC eu vou direto para a tela de animação
-         //IsKeyPressed função e KEYPRESSED é a tecla que vai ser pressionada
-         //IsKeyPressed = apertou UMA vez
+        case tela_animacao:
+            if (IsKeyPressed(KEY_ENTER)){
+                ModoDoJogo = tela_batalha;
+            }
 
          case tela_batalha:
 
@@ -126,6 +129,20 @@ void UpdateGame(){
             }
 
             break;
+
+        case tela_batalha:
+
+        //Inimigo ataca
+
+            if (GetRandomValue(0,100) < 2){ //Quando um valor entre 0 e 100 é usado for menor que dois (entre 1 e 0) 
+                jogador.vida--; //O jogador perde vida 
+            }
+
+        //Fim da batalha
+
+            if (inimigo.vida <= 0){
+                ModoDoJogo = tel
+            }
 
     }
 
