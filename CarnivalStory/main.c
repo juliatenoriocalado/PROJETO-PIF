@@ -47,6 +47,12 @@ typedef struct {
     int ativado;
 } Inimigo;
 
+typedef struct {
+    Rectangle corpo;
+    float velocidade;
+    int ativo;
+} Projetil_Inimigo;
+
 int IndiceCenaFinal = 0; //Contador para marcas as cenas sendo passadas
 
 const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marcar o começo de uma string)
@@ -65,6 +71,7 @@ Telas ModoDoJogo = tela_menu;
 
 Jogador jogador;
 Inimigo inimigo;
+Projetil_Inimigo projetil_inimigo;
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -85,6 +92,10 @@ void InitGame(){
 
     inimigo.vida = 500;
     inimigo.ativado = 1;
+
+    projetil_inimigo.corpo = (Rectangle){inimigo.posicao.x, COORDENADA_CHAO - 40,30,20};
+    projetil_inimigo.velocidade = 5.0f
+    projetil_inimigo.ativo = 1;
 
     //Em c não temos boleano, então a gente define 1 para estar ativo e 0 para desativado.
 
@@ -147,12 +158,17 @@ void AtualizarJogo(){
 
             }
 
-            //Inimigo ataca
+            //Inimigo ataca pelo projetil
 
-            if (GetRandomValue(0,100) < 2){ //Quando um valor entre 0 e 100 é usado for menor que dois (entre 1 e 0) 
-                jogador.vida--; //O jogador perde vida 
+            if (projetil_inimigo.ativo){ //Faz o projétil andar da direita para a esquerda, fazendo com que a velocidade ande negativamente no eixo x e influenciando correlativamente a posição / corpo do projétil
+                projetil_inimigo.corpo.x -= projetil_inimigo.velocidade;
             }
 
+            if (projetil_inimigo.corpo.x < -50){
+                projetil_inimigo.corpo.x = inimigo.posicao.x;
+                projetil_inimigo.corpo.y = GetRandonValue(COORDENADA_CHAO - 150, COORDENADA_CHAO - 20); //Ele vai "sortear" a altura que o projétil vai ser lançado
+            }
+             
             //Inimigo perdeu ou Jogador perdeu
 
             if (jogador.vida <= 0){
