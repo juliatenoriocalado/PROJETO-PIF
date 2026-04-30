@@ -162,7 +162,7 @@ void AtualizarJogo(){
 
             if (jogador.vida <= 0){
                 IndiceCenaFinal = 0;
-                ModoDoJogo
+                ModoDoJogo = tela_GameOver
             }
 
             break;
@@ -170,8 +170,9 @@ void AtualizarJogo(){
             //Fim da batalha
 
             case tela_GameOver:
-                if (jogador.vida <= 0){
-                    ModoDoJogo = tela_GameOver;
+                if (IsKeyPressed(KEY_ENTER)){
+                    InitGame();
+                    ModoDoJogo = tela_menu;
                 }
 
                 break;
@@ -237,6 +238,12 @@ void DesenharJogo(){
                 }else{
                     DrawText("ENTER para retornar ao menu", 180,520,20,GRAY);
                 }
+
+            break;
+
+        case tela_GameOver:
+            DrawText("VOCÊ PERDEU",260,250,60,RED);
+            DrawText("Pressione ENTER para tentar novamente",160,330,20,WHITE);
 
             break;
 
