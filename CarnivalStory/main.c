@@ -42,6 +42,7 @@ typedef struct {
 //De forma resumida, Vector2 é um tipo de variável que marca coordenadas
 
 typedef struct {
+    Vector2 posicao;
     int vida;
     int ativado;
 } Inimigo;
@@ -74,6 +75,7 @@ Inimigo inimigo;
 void InitGame(){
 
     jogador.posicao = (Vector2){400, COORDENADA_CHAO}; //X = 400 (posição horizontal) e Y = COORDENADA_CHAO (começa no)
+    inimigo.posicao = (Vector2){650, COORDENADA_CHAO - 100};
 
     //Coordenadas do jogador
 
@@ -215,6 +217,7 @@ void DesenharJogo(){
             DrawText("LUTE!", 350,50,30,RED);
 
             DrawCircleV(jogador.posicao,20,BLUE);
+            DrawRectangleV(inimigo.posicao, (Vector2){80,100}, RED);
 
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
             DrawText(TextFormat("Inimigo HP: %d", inimigo.vida), 50,130,20,RED);
