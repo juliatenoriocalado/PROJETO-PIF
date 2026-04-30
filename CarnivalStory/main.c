@@ -151,18 +151,15 @@ void AtualizarJogo(){
                 jogador.vida--; //O jogador perde vida 
             }
 
-            //Inimigo perdeu
-
-            if (inimigo.vida <= 0){
-                IndiceCenaFinal = 0;
-                ModoDoJogo = tela_animacaoFinal;
-            }
-
-            //Jogador perdeu
+            //Inimigo perdeu ou Jogador perdeu
 
             if (jogador.vida <= 0){
+                ModoDoJogo = tela_GameOver;
+            }
+
+            else if (inimigo.vida <= 0){
                 IndiceCenaFinal = 0;
-                ModoDoJogo = tela_GameOver
+                ModoDeJogo = tela_animacaoFinal;
             }
 
             break;
