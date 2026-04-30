@@ -1,17 +1,20 @@
 #include "raylib.h"
 #include <stdio.h>
 
+//Constantes
+
 #define LARGURA_TELA 800
 #define ALTURA_TELA 600
 #define COORDENADA_CHAO 500
 #define INTENSIDADE_PULO -10.0f
 #define GRAVIDADE 0.5f
+#define TOTAL_CENAS_FINAIS 3
 
 //==============================================
 // Definição de modos de jogo ; telas ; estados
 // =============================================
 
-typedef enum {
+typedef enum { //Controlar que tela está ativa
     tela_menu,
     tela_batalha,
     tela_animacaoIntro,
@@ -21,7 +24,7 @@ typedef enum {
 
 //Enum é para representar uma escolha fixa (é um tipo de struct)
 //Nesse caso temos um enum (não é struct, mas parece) porque não se pode ter várias telas ao mesmo tempo, e sim uma por vez.
-//Em um "enum", perceba, não colocamos ; (como struct)
+// Com typedef enum, colocamos ; depois do nome do tipo, igual na struct.
 
 //==============================================
 //             Estruturas básicas
@@ -42,6 +45,14 @@ typedef struct {
     int vida;
     int ativado;
 } Inimigo;
+
+int IndiceCenaFinal = 0; //Contador para marcas as cenas sendo passadas
+
+const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marcar o começo de uma string)
+    "No final, Rose acorda...",
+    "E percebe que, no fim, tudo não passava de um 'sonho'.",
+    "Ela se levantou, e finalmente adquiriu a coragem que precisava para o show..."
+};
 
 //==============================================
 //             Variáveis globais
@@ -134,19 +145,52 @@ void AtualizarJogo(){
 
             }
 
-        //Inimigo ataca
+            //Inimigo ataca
 
             if (GetRandomValue(0,100) < 2){ //Quando um valor entre 0 e 100 é usado for menor que dois (entre 1 e 0) 
                 jogador.vida--; //O jogador perde vida 
             }
 
-        //Fim da batalha
+            //Inimigo perdeu
 
             if (inimigo.vida <= 0){
+                IndiceCenaFinal = 0;
                 ModoDoJogo = tela_animacaoFinal;
             }
 
+            //Jogador perdeu
+
+            if (jogador.vida <= 0){
+                IndiceCenaFinal = 0;
+                ModoDoJogo
+            }
+
             break;
+
+            //Fim da batalha
+
+            case tela_GameOver:
+                if (jogador.vida <= 0){
+                    ModoDoJogo = tela_GameOver;
+                }
+
+                break;
+
+            case tela_animacaoFinal:
+            
+                if (IsKeyPressed(KEY_ENTER)){
+                    IndiceCenaFinal++;
+
+                    if (IndiceCenaFinal >= TOTAL_CENAS_FINAIS){
+                        InitGame();
+                        IndiceCenaFinal = 0; //Vai começar no indice zero
+                        ModoDoJogo = tela_menu;
+
+                    }
+
+                }
+
+                break;
 
     }
 
@@ -180,6 +224,22 @@ void DesenharJogo(){
             DrawText("Pressione A para atacar", 50,200,20,WHITE);
             break;
 
+        case tela_animacaoFinal:
+            DrawText("CARNIVAL STORY", 250,80,40,RED);
+
+            DrawRectangle(80,140,640,280,BLACK);
+            DrawRectangleLines(80,140,640,280,WHITE);
+
+            DrawText(textos_final[IndiceCenaFinal], 110,450,20,WHITE); //Acessar o índice do vetor de cenas
+
+                if (IndiceCenaFinal < TOTAL_CENAS_FINAIS - 1){ //Se o índice da cena final chegou no total de cenas, então acabaram as cenas finais.
+                        DrawText("ENTER para continuar", 180,520,20,GRAY);
+                }else{
+                    DrawText("ENTER para retornar ao menu", 180,520,20,GRAY);
+                }
+
+            break;
+
     }
 
 }
@@ -210,4 +270,8 @@ int main(){
         //Tanto o BeginDrawing e o EndDrawing são necessários, porque o jogo desenha a tela várias vezez por segundo, tipo 60 FPS
         //Tudo que for visual fica entre eles
     }
+
+    CloseWindow();
+    return 0;
+
 }
