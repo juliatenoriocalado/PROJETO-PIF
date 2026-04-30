@@ -159,7 +159,7 @@ void AtualizarJogo(){
 
             else if (inimigo.vida <= 0){
                 IndiceCenaFinal = 0;
-                ModoDeJogo = tela_animacaoFinal;
+                ModoDoJogo = tela_animacaoFinal;
             }
 
             break;
