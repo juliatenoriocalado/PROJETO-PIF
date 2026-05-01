@@ -9,6 +9,9 @@
 #define INTENSIDADE_PULO -10.0f
 #define GRAVIDADE 0.5f
 #define TOTAL_CENAS_FINAIS 3
+#define LARGURA_PROJETIL 45
+#define ALTURA_PROJETIL 30
+#define ALTURA_PROJETIL_RASTEIRO (COORDENADA_CHAO - ALTURA_PROJETIL) //Para o primeiro iniciar bem perto do chão e forçar ele a pular
 
 //==============================================
 // Definição de modos de jogo ; telas ; estados
@@ -72,6 +75,7 @@ Telas ModoDoJogo = tela_menu;
 Jogador jogador;
 Inimigo inimigo;
 Projetil_Inimigo projetil_inimigo;
+float tempo_sem_receber_dano = 0; //Para o jogador não receber dano várias vezes com um mesmp projétil
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -93,9 +97,17 @@ void InitGame(){
     inimigo.vida = 500;
     inimigo.ativado = 1;
 
-    projetil_inimigo.corpo = (Rectangle){inimigo.posicao.x, COORDENADA_CHAO - 40,30,20};
-    projetil_inimigo.velocidade = 5.0f
+    projetil_inimigo.corpo = (Rectangle){
+        inimigo.posicao.x,
+        ALTURA_PROJETIL_RASTEIRO,
+        LARGURA_PROJETIL,
+        ALTURA_PROJETIL
+    };
+    
+    projetil_inimigo.velocidade = 5.0f;
     projetil_inimigo.ativo = 1;
+
+    tempo_sem_receber_dano = 0;
 
     //Em c não temos boleano, então a gente define 1 para estar ativo e 0 para desativado.
 
@@ -164,11 +176,33 @@ void AtualizarJogo(){
                 projetil_inimigo.corpo.x -= projetil_inimigo.velocidade;
             }
 
-            if (projetil_inimigo.corpo.x < -50){
-                projetil_inimigo.corpo.x = inimigo.posicao.x;
-                projetil_inimigo.corpo.y = GetRandonValue(COORDENADA_CHAO - 150, COORDENADA_CHAO - 20); //Ele vai "sortear" a altura que o projétil vai ser lançado
+            if (projetil_inimigo.corpo.x < -50){ //Verifica se o projétil saiu pela esquerda da tela
+                projetil_inimigo.corpo.x = inimigo.posicao.x; //O projétil retorna à posição do inimigo
+                projetil_inimigo.corpo.y = ALTURA_PROJETIL_RASTEIRO; //Ele vai "sortear" a altura que o projétil vai ser lançado
+                
+                //Começa um novo ataque
+                //Na função GetRandomValue temos (Valor mínimo, Valor máximo), nesse caso estamos falando da altura com a qual o projétil vai ser sorteado
             }
-             
+
+            //Tempo invencível após receber o dano
+
+            if (tempo_sem_receber_dano > 0){
+                tempo_sem_receber_dano -= GetFrameTime(); //GetFrameTime é da Raylib, e representa o tempo entre um frame e outro, nesse caso é para marcar o tempo de receber dano apenas quando enconsta
+
+            }
+
+            if (CheckCollisionCircleRec(jogador.posicao,20,projetil_inimigo.corpo) && tempo_sem_receber_dano <= 0){
+                jogador.vida -= 10;
+                tempo_sem_receber_dano = 1.0f;
+
+                //Isso faz com que deixe um pouco justo, para com que o jogador não fique recebendo dano sem ter tempo de se movimentar ou de se reposicionar
+                //Jogador tem 1 segundo de invencibilidade após levar dano
+
+                projetil_inimigo.corpo.x = inimigo.posicao.x;
+                projetil_inimigo.corpo.y = ALTURA_PROJETIL_RASTEIRO; //Após acertar o jogador, o projétil volta para o inimigo
+            
+            }
+
             //Inimigo perdeu ou Jogador perdeu
 
             if (jogador.vida <= 0){
@@ -234,6 +268,7 @@ void DesenharJogo(){
 
             DrawCircleV(jogador.posicao,20,BLUE);
             DrawRectangleV(inimigo.posicao, (Vector2){80,100}, RED);
+            DrawRectangleRec(projetil_inimigo.corpo, ORANGE);
 
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
             DrawText(TextFormat("Inimigo HP: %d", inimigo.vida), 50,130,20,RED);
