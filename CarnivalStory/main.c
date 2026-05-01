@@ -19,6 +19,9 @@
 #define VELOCIDADE_PROJETIL 14.0f
 #define ALTURA_PROJETIL_MIN (COORDENADA_CHAO - 35)
 #define ALTURA_PROJETIL_MAX (COORDENADA_CHAO - ALTURA_PROJETIL)
+#define LARGURA_ATAQUE 60
+#define ALTURA_ATAQUE 40
+#define TEMPO_ATAQUE 0.15f
 
 //==============================================
 // Definição de modos de jogo e telas
@@ -84,6 +87,9 @@ Inimigo inimigo;
 Projetil_Inimigo projetil_inimigo;
 float tempo_sem_receber_dano = 0; //Para o jogador não receber dano várias vezes com um mesmp projétil
 float cooldown_projetil = 0;
+Rectangle ataque_jogador;
+float tempo_ataque = 0;
+int atacando = 0;
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -101,6 +107,10 @@ void InitGame(){
     jogador.vida = VIDA_MAX_JOGADOR;
     jogador.no_chao = 1;
     jogador.velocidade_pulo = 0;
+
+    ataque_jogador = (Rectangle){0,0,LARGURA_ATAQUE,ALTURA_ATAQUE};
+    tempo_ataque = 0;
+    atacando = 0;
 
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
@@ -149,19 +159,42 @@ void AtualizarJogo(){
             if (IsKeyDown(KEY_RIGHT)) jogador.posicao.x += 2;
             if (IsKeyDown(KEY_LEFT)) jogador.posicao.x -= 2;
 
-            if (IsKeyPressed(KEY_A)){
-                float distanciaX = inimigo.posicao.x - jogador.posicao.x;
+            //Limite o jogador dentro da tela
 
-                if (distanciaX < 0){
-                    distanciaX = -distanciaX;
+            if (jogador.posicao.x < 20) jogador.posicao.x = 20;
+            if (jogador.posicao.x > LARGURA_TELA - 20) jogador.posicao.x = LARGURA_TELA - 20;
 
-                    //Ficou um pouco confuso aqui mas é porque estamos fazendo do jeito manual, no sentido de: 
-                    //se a distancia entre o jogador e o Boss der negativa, transformamos o número negativo em positivo
+            //Se eu estou pressionando A e eu não estava atacando...
 
-                }
+            if (IsKeyPressed(KEY_A) && !atacando){
+                atacando = 1;
+                tempo_ataque = TEMPO_ATAQUE;
 
-                if (distanciaX <= ALCANCE_ATAQUE_JOGADOR){
+                ataque_jogador = (Rectangle){
+                    jogador.posicao.x + 20,
+                    jogador.posicao.y - 30,
+                    LARGURA_ATAQUE,
+                    ALTURA_ATAQUE
+                };
+
+                Rectangle corpo_inimigo = {
+                    inimigo.posicao.x,
+                    inimigo.posicao.y,
+                    80,
+                    100
+                };
+
+                if (CheckCollisionRecs(ataque_jogador, corpo_inimigo)){
                     inimigo.vida -= 10;
+                
+                }
+            }
+
+            if (atacando){ //Se o jogador estiver atacando
+                tempo_ataque -= GetFrameTime(); //Vai diminuindo o tempo restante do ataque a cada frame para durar exatamente o TEMPO_ATAQUE da constante
+
+                if (tempo_ataque <= 0){ //Se o tempo do ataque for menor ou igual a zero, ou seja, se o jogador NÃO estiver atacando
+                    atacando = 0; //O ataque zera novamente
                 }
             }
 
@@ -313,6 +346,11 @@ void DesenharJogo(){
             DrawText("LUTE!", 350,50,30,RED);
 
             DrawCircleV(jogador.posicao,20,BLUE);
+
+            if (atacando){
+                DrawRectangleLinesEx(ataque_jogador,2,PINK);
+            }
+
             DrawRectangleV(inimigo.posicao, (Vector2){80,100}, RED);
 
             if (projetil_inimigo.ativo){
