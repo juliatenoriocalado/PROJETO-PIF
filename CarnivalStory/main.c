@@ -104,6 +104,9 @@ float cooldown_parry = 0; //Quanto tempo para o parry poder ser usado de novo
 float tempo_texto_parry = 0; //Tempo em que o texto "parry!" é exibido
 int avisando_ataque_inimigo = 0;
 float tempo_aviso_ataque_inimigo = 0;
+float tempo_recebendo_dano_jogador = 0;
+float tempo_recebendo_dano_inimigo = 0;
+float tempo_texto_dano = 0;
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -130,6 +133,10 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     tempo_parry = 0;
     cooldown_parry = 0;
     tempo_texto_parry = 0;
+
+    tempo_recebendo_dano_jogador = 0;
+    tempo_recebendo_dano_inimigo = 0;
+    tempo_texto_dano = 0;
 
     int avisando_ataque_inimigo = 0;
     float tempo_aviso_ataque_inimigo = 0;
@@ -210,6 +217,8 @@ void AtualizarJogo(){
 
                 if (CheckCollisionRecs(ataque_jogador, corpo_inimigo)){
                     inimigo.vida -= 10;
+                    tempo_recebendo_dano_inimigo = 0.15f;
+                    tempo_texto_dano = 0.3f;
                 
                 }
             }
@@ -259,6 +268,24 @@ void AtualizarJogo(){
 
             if (tempo_texto_parry > 0){
                 tempo_texto_parry -= GetFrameTime();
+            }
+
+            //Tempo recebendo dano no jogador
+
+            if (tempo_recebendo_dano_jogador > 0){
+                tempo_recebendo_dano_jogador -= GetFrameTime();
+            }
+
+            //Tempo do texto "ATACOU!"
+
+            if (tempo_texto_dano > 0){
+                tempo_texto_dano -= GetFrameTime();
+            }
+
+            //Tempo visual de dano no inimigo
+
+            if (tempo_recebendo_dano_inimigo > 0){
+                tempo_recebendo_dano_inimigo -= GetFrameTime();
             }
 
             //Ativar parry com Q
@@ -344,16 +371,18 @@ void AtualizarJogo(){
 
                 inimigo.vida -= DANO_PARRY;
                 tempo_texto_parry = 0.4f;
+                tempo_recebendo_dano_inimigo = 0.15f;
 
                 projetil_inimigo.corpo.x = inimigo.posicao.x;
                 projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
             }
 
-            //Testa se o jogador tomou dano
+            //Testa se o jogador tomou dano ou Quando a Rose tomar dano
 
             else if (projetil_inimigo.ativo && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
                 jogador.vida -= 10;
                 tempo_sem_receber_dano = 1.0f;
+                tempo_recebendo_dano_jogador = 0.2f;
 
                 projetil_inimigo.ativo = 0;
                 cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
@@ -424,15 +453,32 @@ void DesenharJogo(){
             break;
 
         case tela_batalha:
+
             DrawText("LUTE!", 350,50,30,RED);
 
-            DrawCircleV(jogador.posicao,20,BLUE);
+            Color corJogador = BLUE;
+
+            if (tempo_recebendo_dano_jogador > 0){
+                corJogador = RED;
+            }
+
+            DrawCircleV (jogador.posicao, 20, corJogador);
 
             if (atacando){
                 DrawRectangleLinesEx(ataque_jogador,2,PINK);
             }
 
-            DrawRectangleV(inimigo.posicao, (Vector2){80,100}, RED);
+            Color corInimigo = RED;
+
+            if (tempo_recebendo_dano_inimigo > 0){
+                corInimigo = WHITE;
+            }
+
+            DrawRectangleV(inimigo.posicao, (Vector2){80,100}, corInimigo);
+
+            if (tempo_texto_dano > 0){
+                DrawText("ATACOU!", inimigo.posicao.x + 10, inimigo.posicao.y - 30, 20, YELLOW);
+            }
 
             if (avisando_ataque_inimigo){
                 DrawText("!", inimigo.posicao.x + 35, inimigo.posicao.y - 35, 40, YELLOW); //Mostra a exclamação antes do palhaço atacar 
