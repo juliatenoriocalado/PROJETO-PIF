@@ -21,7 +21,11 @@
 #define ALTURA_PROJETIL_MAX (COORDENADA_CHAO - ALTURA_PROJETIL)
 #define LARGURA_ATAQUE 60
 #define ALTURA_ATAQUE 40
-#define TEMPO_ATAQUE 0.15f
+#define TEMPO_ATAQUE 0.15f 
+#define TEMPO_PARRY 0.18f //Tempo para acertar o parry
+#define COOLDOWN_PARRY 0.7f //Tempo de recarregar o parry
+#define DANO_PARRY 5 //Dano que o boss leva ao ser aparado
+#define AREA_PARRY 35 //Tamanho visual do parry
 
 //==============================================
 // Definição de modos de jogo e telas
@@ -89,7 +93,11 @@ float tempo_sem_receber_dano = 0; //Para o jogador não receber dano várias vez
 float cooldown_projetil = 0;
 Rectangle ataque_jogador;
 float tempo_ataque = 0;
-int atacando = 0;
+int atacando = 0; //Se o jogador está atacando
+int aparando = 0; //Se o jogador está aparando
+float tempo_parry; //Quanto tempo para o parry acabar
+float cooldown_parry = 0; //Quanto tempo para o parry poder ser usado de novo
+float tempo_texto_parry = 0; //Tempo em que o texto "parry!" é exibido
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -97,7 +105,7 @@ int atacando = 0;
 //                                                                            Inicalização do jogo! 
 //==============================================================================================================================================================================================
 
-void InitGame(){
+void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
 
     jogador.posicao = (Vector2){400, COORDENADA_CHAO}; //X = 400 (posição horizontal) e Y = COORDENADA_CHAO (começa no)
     inimigo.posicao = (Vector2){650, COORDENADA_CHAO - 100};
@@ -111,6 +119,11 @@ void InitGame(){
     ataque_jogador = (Rectangle){0,0,LARGURA_ATAQUE,ALTURA_ATAQUE};
     tempo_ataque = 0;
     atacando = 0;
+
+    aparando = 0;
+    tempo_parry = 0;
+    cooldown_parry = 0;
+    tempo_texto_parry = 0;
 
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
@@ -164,6 +177,8 @@ void AtualizarJogo(){
             if (jogador.posicao.x < 20) jogador.posicao.x = 20;
             if (jogador.posicao.x > LARGURA_TELA - 20) jogador.posicao.x = LARGURA_TELA - 20;
 
+
+
             //Se eu estou pressionando A e eu não estava atacando...
 
             if (IsKeyPressed(KEY_A) && !atacando){
@@ -207,7 +222,6 @@ void AtualizarJogo(){
                 //ele recebe velocidade para cima e não vai estar no chão, o famoso PULAAR
 
             }
-
             
             jogador.velocidade_pulo += GRAVIDADE; //A gravidade MUDA a velocidade vertical do jogador
             // <-----------      <---------
@@ -224,6 +238,36 @@ void AtualizarJogo(){
                     jogador.velocidade_pulo = 0; //Não vai estar pulando, para a queda
                     jogador.no_chao = 1; //E a afirmação se torna verdadeira de que ele tá no chão, permitindo que ele pule de novo
 
+            }
+
+            //Cooldown do parry
+
+            if (cooldown_parry > 0){
+                cooldown_parry -= GetFrameTime();
+            }
+
+            //Tempo texto "APAROU!"
+
+            if (tempo_texto_parry > 0){
+                tempo_texto_parry -= GetFrameTime();
+            }
+
+            //Ativar parry com Q
+
+            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando){
+                aparando = 1;
+                tempo_parry = TEMPO_PARRY;
+                cooldown_parry = COOLDOWN_PARRY;
+            }
+
+            //Tempo ativo do parry
+
+            if (aparando){
+                tempo_parry -= GetFrameTime();
+
+                if (tempo_parry <=0){
+                    aparando = 0;
+                }
             }
 
             //Cooldown do Boss
@@ -265,21 +309,31 @@ void AtualizarJogo(){
 
             }
 
-            //Definir colisão do projétil com o jogador = configuração do ataque de modo direto
+            //Lógica da colisão do projétil com o parry, testa se o jogador aparou
 
-            if (projetil_inimigo.ativo && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <= 0){
+            if (aparando && projetil_inimigo.ativo && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
+                projetil_inimigo.ativo = 0;
+                cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
+
+                inimigo.vida -= DANO_PARRY;
+                tempo_texto_parry = 0.4f;
+
+                projetil_inimigo.corpo.x = inimigo.posicao.x;
+                projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
+            }
+
+            //Testa se o jogador tomou dano
+
+            else if (projetil_inimigo.ativo && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
                 jogador.vida -= 10;
                 tempo_sem_receber_dano = 1.0f;
-
-                //Isso faz com que deixe um pouco justo, para com que o jogador não fique recebendo dano sem ter tempo de se movimentar ou de se reposicionar
-                //Jogador tem 1 segundo de invencibilidade após levar dano
 
                 projetil_inimigo.ativo = 0;
                 cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
 
                 projetil_inimigo.corpo.x = inimigo.posicao.x;
                 projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-    
+
             }
 
             //Inimigo perdeu ou Jogador perdeu
@@ -352,6 +406,15 @@ void DesenharJogo(){
             }
 
             DrawRectangleV(inimigo.posicao, (Vector2){80,100}, RED);
+
+            if (aparando){
+                DrawCircleLines(jogador.posicao.x, jogador.posicao.y, AREA_PARRY, SKYBLUE);
+                DrawCircleLines(jogador.posicao.x, jogador.posicao.y, AREA_PARRY -5, BLUE);
+            }
+
+            if (tempo_texto_parry > 0){
+                DrawText("APAROU!", jogador.posicao.x - 35, jogador.posicao.y - 70, 20, SKYBLUE);
+            }
 
             if (projetil_inimigo.ativo){
                 DrawRectangleRec(projetil_inimigo.corpo, ORANGE);
