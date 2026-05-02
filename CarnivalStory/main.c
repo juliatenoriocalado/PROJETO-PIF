@@ -29,6 +29,7 @@
 #define VELOCIDADE_PROJETIL_FASE2 14.0f
 #define TEMPO_COOLDOWN_PROJETIL_FASE1 0.6f
 #define TEMPO_COOLDOWN_PROJETIL_FASE2 0.45f
+#define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f
 
 //==============================================
 // Definição de modos de jogo e telas
@@ -101,6 +102,8 @@ int aparando = 0; //Se o jogador está aparando
 float tempo_parry; //Quanto tempo para o parry acabar
 float cooldown_parry = 0; //Quanto tempo para o parry poder ser usado de novo
 float tempo_texto_parry = 0; //Tempo em que o texto "parry!" é exibido
+int avisando_ataque_inimigo = 0;
+float tempo_aviso_ataque_inimigo = 0;
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -127,6 +130,9 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     tempo_parry = 0;
     cooldown_parry = 0;
     tempo_texto_parry = 0;
+
+    int avisando_ataque_inimigo = 0;
+    float tempo_aviso_ataque_inimigo = 0;
 
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
@@ -289,12 +295,22 @@ void AtualizarJogo(){
 
             //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
 
-            if (!projetil_inimigo.ativo && cooldown_projetil <= 0){
-                projetil_inimigo.ativo = 1;
+            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){
 
-                projetil_inimigo.corpo.x = inimigo.posicao.x;
-                projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX); //Altura aleatória do disparo 
+                avisando_ataque_inimigo = 1;
+                tempo_aviso_ataque_inimigo = TEMPO_AVISO_ATAQUE_INIMIGO;
+            }
 
+            if (avisando_ataque_inimigo){
+                tempo_aviso_ataque_inimigo -= GetFrameTime();
+
+                if (tempo_aviso_ataque_inimigo <= 0){
+                    avisando_ataque_inimigo = 0;
+                    projetil_inimigo.ativo = 1;
+
+                    projetil_inimigo.corpo.x = inimigo.posicao.x;
+                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
+                }
             }
 
             //Se o projétil está ativo, ele anda para a esquerda (eixo x negativo)
@@ -417,6 +433,11 @@ void DesenharJogo(){
             }
 
             DrawRectangleV(inimigo.posicao, (Vector2){80,100}, RED);
+
+            if (avisando_ataque_inimigo){
+                DrawText("!", inimigo.posicao.x + 35, inimigo.posicao.y - 35, 40, YELLOW); //Mostra a exclamação antes do palhaço atacar 
+                DrawRectangleLines(inimigo.posicao.x - 5, inimigo.posicao.y - 5, 90, 110, YELLOW); //Mostra uma aura amarela antes de atacar
+            }
 
             if (aparando){
                 DrawCircleLines(jogador.posicao.x, jogador.posicao.y, AREA_PARRY, SKYBLUE);
