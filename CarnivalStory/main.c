@@ -16,7 +16,6 @@
 #define VIDA_MAX_JOGADOR 100
 #define TEMPO_COOLDOWN_PROJETIL 0.6f
 #define ALCANCE_ATAQUE_JOGADOR 100 //Distância máxima que o jogador pode causar dano
-#define VELOCIDADE_PROJETIL 14.0f
 #define ALTURA_PROJETIL_MIN (COORDENADA_CHAO - 35)
 #define ALTURA_PROJETIL_MAX (COORDENADA_CHAO - ALTURA_PROJETIL)
 #define LARGURA_ATAQUE 60
@@ -26,6 +25,10 @@
 #define COOLDOWN_PARRY 0.7f //Tempo de recarregar o parry
 #define DANO_PARRY 5 //Dano que o boss leva ao ser aparado
 #define AREA_PARRY 35 //Tamanho visual do parry
+#define VELOCIDADE_PROJETIL_FASE1 8.0f
+#define VELOCIDADE_PROJETIL_FASE2 14.0f
+#define TEMPO_COOLDOWN_PROJETIL_FASE1 0.6f
+#define TEMPO_COOLDOWN_PROJETIL_FASE2 0.45f
 
 //==============================================
 // Definição de modos de jogo e telas
@@ -137,9 +140,9 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     
     //A ideia é que o Boss não comece atirando, ele espera um tempo e começa a atirar
     
-    projetil_inimigo.velocidade = VELOCIDADE_PROJETIL;
+    projetil_inimigo.velocidade = VELOCIDADE_PROJETIL_FASE1;
     projetil_inimigo.ativo = 0;
-    cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
+    cooldown_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
 
     tempo_sem_receber_dano = 0;
 
@@ -270,6 +273,14 @@ void AtualizarJogo(){
                 }
             }
 
+            float velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE1;
+            float tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
+
+            if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){
+                velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE2;
+                tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE2;
+            }
+
             //Cooldown do Boss
 
             if (cooldown_projetil > 0){
@@ -289,7 +300,7 @@ void AtualizarJogo(){
             //Se o projétil está ativo, ele anda para a esquerda (eixo x negativo)
 
             if (projetil_inimigo.ativo){
-                projetil_inimigo.corpo.x -= projetil_inimigo.velocidade;
+                projetil_inimigo.corpo.x -= velocidade_atual_projetil;
 
                 //Se o projétil sair da tela, ele desativa e espera o próximo cooldown para ser ativado
 
@@ -422,6 +433,10 @@ void DesenharJogo(){
 
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
             DrawText(TextFormat("Inimigo HP: %d", inimigo.vida), 50,130,20,RED);
+
+            if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){
+                DrawText("FASE 2",650,50,20,RED);
+            }
 
             DrawRectangle(50,160,300,20,DARKGRAY);
             float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO) * 300;
