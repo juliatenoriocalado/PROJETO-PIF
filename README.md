@@ -3,6 +3,12 @@ Desenvolvimento de jogo para a cadeira de Programação Imperativa Funcional
 
 gcc main.c game.c -o jogo.exe -I"C:\raylib\raylib\src" -L"C:\raylib\raylib\src" -lraylib -lopengl32 -lgdi32 -lwinmm
 
+Manual do Projeto:
+https://docs.google.com/document/d/13pf4KvmaYNXZTb2gA_sq3NhMEbgtJOwITAk_XaqN4Sc/edit?usp=sharing
+
+To do com tarefas concluídas, pendentes e em progresso:
+https://app.clickup.com/90171191673/v/b/2kz9ycbt-457
+
 👉 História estilo Undertale
 👉 Combate estilo Cuphead
 
