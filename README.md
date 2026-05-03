@@ -60,6 +60,7 @@ Boss 1 / Palhaço:
 - fase 2 com cooldown menor
 
 Boss 2 / Marionete:
+- Soltar um ataque especial que, quando acertado no jogador, deixa-o incapaz de atacar e rebater por alguns segundos
 - 2 ou 3 projéteis
 - alturas mais variadas
 - ataques em sequência
