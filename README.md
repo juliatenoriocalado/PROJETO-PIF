@@ -12,6 +12,8 @@ https://app.clickup.com/90171191673/v/b/2kz9ycbt-457
 👉 História estilo Undertale
 👉 Combate estilo Cuphead
 
+------------------------------------------------- SEMANA 1 -------------------------------------------------
+
 Boss 1 - Palhaço
 
 ensinar movimentação
