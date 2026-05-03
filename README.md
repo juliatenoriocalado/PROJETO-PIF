@@ -1,6 +1,8 @@
 # PROJETO-PIF
 Desenvolvimento de jogo para a cadeira de Programação Imperativa Funcional
 
+gcc main.c game.c -o jogo.exe -I"C:\raylib\raylib\src" -L"C:\raylib\raylib\src" -lraylib -lopengl32 -lgdi32 -lwinmm
+
 👉 História estilo Undertale
 👉 Combate estilo Cuphead
 
