@@ -32,10 +32,13 @@
 #define DANO_PARRY 5 //Dano que o boss leva ao ser aparado
 #define AREA_PARRY 35 //Tamanho visual do parry
 #define VELOCIDADE_PROJETIL_FASE1 8.0f
-#define VELOCIDADE_PROJETIL_FASE2 14.0f
+#define VELOCIDADE_PROJETIL_FASE2 15.0f
 #define TEMPO_COOLDOWN_PROJETIL_FASE1 0.6f
 #define TEMPO_COOLDOWN_PROJETIL_FASE2 0.45f
 #define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f
+#define QUANTIDADE_DE_ATAQUES_PARA_RAJADA 3 //A cada três ataques na fase dois 
+#define INTERVALO_RAJADA_BOSS 0.05f //o boss prepara uma rajada com 1 tiro extra
+
 
 //==============================================
 // Definição de modos de jogo e telas

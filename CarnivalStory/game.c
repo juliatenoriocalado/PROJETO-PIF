@@ -36,6 +36,8 @@ float tempo_aviso_ataque_inimigo = 0;
 float tempo_recebendo_dano_jogador = 0;
 float tempo_recebendo_dano_inimigo = 0;
 float tempo_texto_dano = 0;
+int contador_ataques_inimigo = 0;
+int tiros_rajada_restantes = 0; //Controla para saber se falta tiros de rajada extra faltando
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -69,6 +71,9 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
 
     avisando_ataque_inimigo = 0;
     tempo_aviso_ataque_inimigo = 0;
+
+    contador_ataques_inimigo = 0;
+    tiros_rajada_restantes = 0;
 
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
@@ -250,13 +255,34 @@ void AtualizarJogo(){
                 cooldown_projetil -= GetFrameTime();
             }
 
-            //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
-            //Boss dispara o projétil
+            //Lógica projétil
 
-            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){
+            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){ //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
+
+                int ataque_de_rajada = 0;
+
+                if (tiros_rajada_restantes > 0){
+                    tiros_rajada_restantes--;
+                    ataque_de_rajada = 1;
+                }
+
+                else if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){ //Ativa configuração para o modo 2 (que é o modo de quando o inimigo fica com metade da vida)
+                    contador_ataques_inimigo++; //Começa a contar a quantidade de ataques
+
+                    if (contador_ataques_inimigo >= QUANTIDADE_DE_ATAQUES_PARA_RAJADA){ //Se a quantidade de ataques for igual a quantidade de ataques para a rajada 
+                        tiros_rajada_restantes = 1; //Ele conta a rajada
+                        contador_ataques_inimigo = 0; //Zera o contador para contar de novo
+                    }
+                }
 
                 avisando_ataque_inimigo = 1;
-                tempo_aviso_ataque_inimigo = TEMPO_AVISO_ATAQUE_INIMIGO;
+
+                if (ataque_de_rajada){
+                    tempo_aviso_ataque_inimigo = 0.08f;
+                }else{
+                    tempo_aviso_ataque_inimigo = TEMPO_AVISO_ATAQUE_INIMIGO;
+                }
+
             }
 
             if (avisando_ataque_inimigo){
@@ -281,11 +307,16 @@ void AtualizarJogo(){
                 }else{
                     projetil_inimigo.corpo.x -= velocidade_atual_projetil; //Vai da direita para a esquerda
                 }
-//
+
                 if (!projetil_inimigo.rebatido && projetil_inimigo.corpo.x < -50){
                     projetil_inimigo.ativo = 0;
                     projetil_inimigo.rebatido = 0;
-                    cooldown_projetil = tempo_cooldown_atual_projetil;
+                
+                    if (tiros_rajada_restantes > 0){
+                        cooldown_projetil = INTERVALO_RAJADA_BOSS;
+                    }else{
+                        cooldown_projetil = tempo_cooldown_atual_projetil;
+                    }
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -294,13 +325,18 @@ void AtualizarJogo(){
                 if (projetil_inimigo.rebatido && projetil_inimigo.corpo.x > LARGURA_TELA + 50){
                     projetil_inimigo.ativo = 0;
                     projetil_inimigo.rebatido = 0;
-                    cooldown_projetil = tempo_cooldown_atual_projetil;
+
+                    if (tiros_rajada_restantes > 0){
+                        cooldown_projetil = INTERVALO_RAJADA_BOSS;
+                    }else{
+                        cooldown_projetil = tempo_cooldown_atual_projetil;
+                    }
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
+
                 }
             }
-//
 
             //Tempo invencível após receber o dano
 
@@ -325,6 +361,8 @@ void AtualizarJogo(){
                 100
             };
 
+            //Quando o projétil rebatido acerta o boss
+
             if (projetil_inimigo.ativo && projetil_inimigo.rebatido && CheckCollisionRecs(projetil_inimigo.corpo, corpo_inimigo_rebatido)){
                 inimigo.vida -= 20;
                 tempo_recebendo_dano_inimigo = 0.15f;
@@ -332,7 +370,12 @@ void AtualizarJogo(){
 
                 projetil_inimigo.ativo = 0;
                 projetil_inimigo.rebatido = 0;
-                cooldown_projetil = tempo_cooldown_atual_projetil;
+
+                if (tiros_rajada_restantes > 0){
+                    cooldown_projetil = INTERVALO_RAJADA_BOSS;
+                }else{
+                    cooldown_projetil = tempo_cooldown_atual_projetil;
+                }
 
                 projetil_inimigo.corpo.x = inimigo.posicao.x;
                 projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -347,7 +390,12 @@ void AtualizarJogo(){
 
                 projetil_inimigo.ativo = 0;
                 projetil_inimigo.rebatido = 0;
-                cooldown_projetil = tempo_cooldown_atual_projetil;
+
+                if (tiros_rajada_restantes > 0){
+                    cooldown_projetil = INTERVALO_RAJADA_BOSS;
+                }else{
+                    cooldown_projetil = tempo_cooldown_atual_projetil;
+                }
 
                 projetil_inimigo.corpo.x = inimigo.posicao.x;
                 projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -470,6 +518,10 @@ void DesenharJogo(){
 
             if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){
                 DrawText("FASE 2",650,50,20,RED);
+            }
+
+            if (tiros_rajada_restantes > 0){
+                DrawText("ENFURECIDO!", 640,80,20,YELLOW);
             }
 
             DrawRectangle(50,160,300,20,DARKGRAY);
