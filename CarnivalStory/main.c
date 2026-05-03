@@ -72,6 +72,7 @@ typedef struct {
     Rectangle corpo;
     float velocidade;
     int ativo;
+    int rebatido;
 } Projetil_Inimigo;
 
 int IndiceCenaFinal = 0; //Contador para marcas as cenas sendo passadas
@@ -138,8 +139,8 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     tempo_recebendo_dano_inimigo = 0;
     tempo_texto_dano = 0;
 
-    int avisando_ataque_inimigo = 0;
-    float tempo_aviso_ataque_inimigo = 0;
+    avisando_ataque_inimigo = 0;
+    tempo_aviso_ataque_inimigo = 0;
 
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
@@ -155,6 +156,7 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     
     projetil_inimigo.velocidade = VELOCIDADE_PROJETIL_FASE1;
     projetil_inimigo.ativo = 0;
+    projetil_inimigo.rebatido = 0;
     cooldown_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
 
     tempo_sem_receber_dano = 0;
@@ -321,6 +323,7 @@ void AtualizarJogo(){
             }
 
             //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
+            //Boss dispara o projétil
 
             if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){
 
@@ -334,6 +337,7 @@ void AtualizarJogo(){
                 if (tempo_aviso_ataque_inimigo <= 0){
                     avisando_ataque_inimigo = 0;
                     projetil_inimigo.ativo = 1;
+                    projetil_inimigo.rebatido = 0;
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -343,18 +347,32 @@ void AtualizarJogo(){
             //Se o projétil está ativo, ele anda para a esquerda (eixo x negativo)
 
             if (projetil_inimigo.ativo){
-                projetil_inimigo.corpo.x -= velocidade_atual_projetil;
 
-                //Se o projétil sair da tela, ele desativa e espera o próximo cooldown para ser ativado
-
-                if (projetil_inimigo.corpo.x < -50){
+                if (projetil_inimigo.rebatido){
+                    projetil_inimigo.corpo.x += velocidade_atual_projetil; //Vai da esquerda para a direita
+                }else{
+                    projetil_inimigo.corpo.x -= velocidade_atual_projetil; //Vai da direita para a esquerda
+                }
+//
+                if (!projetil_inimigo.rebatido && projetil_inimigo.corpo.x < -50){
                     projetil_inimigo.ativo = 0;
-                    cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
+                    projetil_inimigo.rebatido = 0;
+                    cooldown_projetil = tempo_cooldown_atual_projetil;
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-            }                
-        }
+                }
+
+                if (projetil_inimigo.rebatido && projetil_inimigo.corpo.x > LARGURA_TELA + 50){
+                    projetil_inimigo.ativo = 0;
+                    projetil_inimigo.rebatido = 0;
+                    cooldown_projetil = tempo_cooldown_atual_projetil;
+
+                    projetil_inimigo.corpo.x = inimigo.posicao.x;
+                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
+                }
+            }
+//
 
             //Tempo invencível após receber o dano
 
@@ -363,15 +381,30 @@ void AtualizarJogo(){
 
             }
 
+           
             //Lógica da colisão do projétil com o parry, testa se o jogador aparou
 
-            if (aparando && projetil_inimigo.ativo && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
-                projetil_inimigo.ativo = 0;
-                cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
-
-                inimigo.vida -= DANO_PARRY;
+            if (aparando && projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
+                projetil_inimigo.rebatido = 1;
                 tempo_texto_parry = 0.4f;
+                aparando = 0;
+            }
+
+            Rectangle corpo_inimigo_rebatido = {
+                inimigo.posicao.x,
+                inimigo.posicao.y,
+                80,
+                100
+            };
+
+            if (projetil_inimigo.ativo && projetil_inimigo.rebatido && CheckCollisionRecs(projetil_inimigo.corpo, corpo_inimigo_rebatido)){
+                inimigo.vida -= 20;
                 tempo_recebendo_dano_inimigo = 0.15f;
+                tempo_texto_dano = 0.3f;
+
+                projetil_inimigo.ativo = 0;
+                projetil_inimigo.rebatido = 0;
+                cooldown_projetil = tempo_cooldown_atual_projetil;
 
                 projetil_inimigo.corpo.x = inimigo.posicao.x;
                 projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -379,13 +412,14 @@ void AtualizarJogo(){
 
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
 
-            else if (projetil_inimigo.ativo && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
+            else if (projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
                 jogador.vida -= 10;
                 tempo_sem_receber_dano = 1.0f;
                 tempo_recebendo_dano_jogador = 0.2f;
 
                 projetil_inimigo.ativo = 0;
-                cooldown_projetil = TEMPO_COOLDOWN_PROJETIL;
+                projetil_inimigo.rebatido = 0;
+                cooldown_projetil = tempo_cooldown_atual_projetil;
 
                 projetil_inimigo.corpo.x = inimigo.posicao.x;
                 projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -495,7 +529,12 @@ void DesenharJogo(){
             }
 
             if (projetil_inimigo.ativo){
-                DrawRectangleRec(projetil_inimigo.corpo, ORANGE);
+                if (projetil_inimigo.rebatido){
+                    DrawRectangleRec(projetil_inimigo.corpo, SKYBLUE);
+                }else{
+                    DrawRectangleRec(projetil_inimigo.corpo, ORANGE);
+                }
+
             }
 
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
