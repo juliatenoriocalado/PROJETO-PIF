@@ -1,11 +1,11 @@
 //Controle dos estados do jogo
 
+#include "game.h"
+#include <stdio.h>
+
 //==============================================
 //             Variáveis globais
 //==============================================
-
-#include "game.h"
-#include <stdio.h>
 
 Telas ModoDoJogo = tela_menu;
 
