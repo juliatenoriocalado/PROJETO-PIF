@@ -8,8 +8,10 @@
 //==============================================
 
 Telas ModoDoJogo = tela_menu;
+//Aqui eu estou criando uma variável do tipo enum "Telas" para marcar o início ao menu do jogo
 
-int IndiceCenaFinal = 0; //Contador para marcas as cenas sendo passadas
+int IndiceCenaFinal = 0; //Contador para marcar e contar as cenas que estão sendo passadas ou exibidas no momento
+//Essas cenas do final são as que vão ser exibidas após o jogador vencer o jogo
 
 const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marcar o começo de uma string)
     "No final, Rose acorda...",
@@ -17,27 +19,27 @@ const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marc
     "Ela se levantou, e finalmente adquiriu a coragem que precisava para o show..."
 };
 
-//Aqui eu estou criando uma variável do tipo enum "Telas" para marcar o início ao menu do jogo
-
 Jogador jogador;
-Inimigo inimigo;
-Projetil_Inimigo projetil_inimigo;
+Rectangle ataque_jogador; //Cria uma variável do tipo Rectangle para definir o dano do jogador (Por enquanto...)
+float tempo_ataque = 0; //Tempo que o ataque da Rose fica ativo depois de apertar A
 float tempo_sem_receber_dano = 0; //Para o jogador não receber dano várias vezes com um mesmp projétil
-float cooldown_projetil = 0;
-Rectangle ataque_jogador;
-float tempo_ataque = 0;
+float tempo_recebendo_dano_jogador = 0; //Tempo, segundos, por isso float, que o jogador fica com o EFEITO VISUAL de dano
 int atacando = 0; //Se o jogador está atacando
 int aparando = 0; //Se o jogador está aparando
-float tempo_parry; //Quanto tempo para o parry acabar
+
+Inimigo inimigo;
+Projetil_Inimigo projetil_inimigo;
+int avisando_ataque_inimigo = 0; //Confirma se o Boss está atacando (Sim ou não = 1 ou 0), por isso é do tipo int
+float tempo_aviso_ataque_inimigo = 0; //Por quanto tempo avisa que o Boss vai atacar, por isso float, segundos
+float tempo_recebendo_dano_inimigo = 0; //Tempo, por isso float, que marca o EFEITO VISUAL do inimigo recebendo dano
+float tempo_texto_dano = 0; //Tempo em que o Boss leva dano
+float cooldown_projetil = 0;
+int contador_ataques_inimigo = 0; //Para soltar uma possível "rajada"
+int tiros_rajada_restantes = 0; //Controla para saber se falta tiros de rajada extra faltando, exemplo: 1 (tem tiro extra), 0 (não tem tiro extra)
+
+float tempo_parry; //Quanto tempo para o parry dura
 float cooldown_parry = 0; //Quanto tempo para o parry poder ser usado de novo
-float tempo_texto_parry = 0; //Tempo em que o texto "parry!" é exibido
-int avisando_ataque_inimigo = 0;
-float tempo_aviso_ataque_inimigo = 0;
-float tempo_recebendo_dano_jogador = 0;
-float tempo_recebendo_dano_inimigo = 0;
-float tempo_texto_dano = 0;
-int contador_ataques_inimigo = 0;
-int tiros_rajada_restantes = 0; //Controla para saber se falta tiros de rajada extra faltando
+float tempo_texto_parry = 0; //Tempo em que o texto "APAROU!" é exibido
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -190,7 +192,7 @@ void AtualizarJogo(){
                     jogador.posicao.y = COORDENADA_CHAO; //Trava o jogador no chão
                     jogador.velocidade_pulo = 0; //Não vai estar pulando, para a queda
                     jogador.no_chao = 1; //E a afirmação se torna verdadeira de que ele tá no chão, permitindo que ele pule de novo
-
+                    
             }
 
             //Cooldown do parry
