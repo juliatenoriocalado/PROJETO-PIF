@@ -1,43 +1,44 @@
 //EM C, quando um projeto é muito grande a gente geralmente separa um arquivo chamado algo.h 
 // para saber quais funções/structs existem em outro. {Declarações gerais do jogo}
 
-#ifndef GAME_H
-#define GAME_H
+#ifndef GAME_H //Se algo ou um trabalho ou enfim, se ALGO ainda não estiver definido, execute o que está em baixo ("ANOTE O NÚMERO")
+#define GAME_H 
+
+// #define GAME_H Etiqueta para definir a configuração (tipo um nome)
 
 #include "raylib.h"
 #include <stdio.h>
 
 //Constantes
 
-#define LARGURA_TELA 800
-#define ALTURA_TELA 600
-#define COORDENADA_CHAO 500
-#define INTENSIDADE_PULO -10.0f
-#define GRAVIDADE 0.5f
-#define TOTAL_CENAS_FINAIS 3
-#define LARGURA_PROJETIL 45
-#define ALTURA_PROJETIL 30
+#define LARGURA_TELA 800 //Largura da tela que vai ser aberta para jogar
+#define ALTURA_TELA 600 //Altura da tela que o jogo vai abrir
+#define COORDENADA_CHAO 500 //Coordenada que o personagem vai iniciar no jogo (em Raylib, o eixo Y começa do 0, no TOPO da tela e vai descendo para baixo, por isso que é 500, porque a tela é 600)
+#define INTENSIDADE_PULO -10.0f //Intensidade com que o jogador pula
+#define GRAVIDADE 0.5f //Gravidade definida (cair mais lento mais rápido...)
+#define TOTAL_CENAS_FINAIS 3 (Quantidade de cenas que serão exibidas no final, quando o jogo acabar)
+#define LARGURA_PROJETIL 45 (largura ou grossura do projétil, tamanho pra os lados)
+#define ALTURA_PROJETIL 30 
 #define ALTURA_PROJETIL_RASTEIRO (COORDENADA_CHAO - ALTURA_PROJETIL) //Para o primeiro iniciar bem perto do chão e forçar ele a pular
-#define VIDA_MAX_INIMIGO 500
+#define VIDA_MAX_INIMIGO 500 
 #define VIDA_MAX_JOGADOR 100
-#define TEMPO_COOLDOWN_PROJETIL 0.6f
-#define ALCANCE_ATAQUE_JOGADOR 100 //Distância máxima que o jogador pode causar dano
+#define TEMPO_COOLDOWN_PROJETIL 0.6f 
 #define ALTURA_PROJETIL_MIN (COORDENADA_CHAO - 35)
 #define ALTURA_PROJETIL_MAX (COORDENADA_CHAO - ALTURA_PROJETIL)
-#define LARGURA_ATAQUE 60
-#define ALTURA_ATAQUE 40
-#define TEMPO_ATAQUE 0.15f 
+#define LARGURA_ATAQUE 60  //Largura do ataque do jogador
+#define ALTURA_ATAQUE 40 //Altura do ataque do jogador
+#define TEMPO_ATAQUE 0.15f //Tempo que marca quando a Rose recebe dano (é para mostrar visualmente e desenhar na hora)
 #define TEMPO_PARRY 0.18f //Tempo para acertar o parry
 #define COOLDOWN_PARRY 0.7f //Tempo de recarregar o parry
 #define DANO_PARRY 5 //Dano que o boss leva ao ser aparado
-#define AREA_PARRY 35 //Tamanho visual do parry
+#define AREA_PARRY 30 //Tamanho visual do parry (quanto maior, mais fácil de acertar, porque ele mede a colisão entre o projétil e o jogador)
 #define VELOCIDADE_PROJETIL_FASE1 8.0f
 #define VELOCIDADE_PROJETIL_FASE2 15.0f
 #define TEMPO_COOLDOWN_PROJETIL_FASE1 0.6f
 #define TEMPO_COOLDOWN_PROJETIL_FASE2 0.45f
-#define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f
+#define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f //Duração do aviso antes de o inimigo atacar (antes de ele atacar)
 #define QUANTIDADE_DE_ATAQUES_PARA_RAJADA 3 //A cada três ataques na fase dois 
-#define INTERVALO_RAJADA_BOSS 0.05f //o boss prepara uma rajada com 1 tiro extra
+#define INTERVALO_RAJADA_BOSS 0.001f //Tempo de espera entre um tiro e o próximo configurado como rajada
 
 
 //==============================================
