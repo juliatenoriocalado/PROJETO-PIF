@@ -1,20 +1,26 @@
 #include "raylib.h"
 #include "game.h"
 
+//Lógica que gosto para explicar:
+//BeginDrawing() Peguei uma folha de papel para desenhar
+//ClearBackground() pintei a folha inteira com um fundo, exemplo: um céu azul
+//DesenharJogo() Desenhei meus personagens e detalhes do desenho
+//EndDrawing() Mostrei a folha com o desenho pronto na tela
+
 int main(){
 
     InitWindow(LARGURA_TELA,ALTURA_TELA,"Carnival Story");
-    SetTargetFPS(60); //Função do Raylib que define os frames por segundo, sem isso, poderia rodar rápido demais (dependendo do pc)
+    SetTargetFPS(60); //Função da Raylib que define os frames por segundo (FPS), sem isso, o while poderia rodar rápido demais (dependendo do pc), o que poderia prejudicar o desempenho do computador (se for alto demais).
+    InitGame(); //Marca o início do jogo
 
-    InitGame();
-
-    while (!WindowShouldClose()){ //Enquanto a janela NÃO estiver fechada, continue rodando o jogo
+    while (!WindowShouldClose()){ //Enquanto a janela NÃO estiver fechada, continue rodando o jogo nesse lopíng
 
         AtualizarJogo(); //Lógica: teclas, movimentos, vida, colisão
 
         BeginDrawing(); //Função especial que marca o começo da parte do desenho da tela (desenha o frame)
 
-        ClearBackground(DARKGRAY); //Limpar tela
+        ClearBackground(DARKGRAY); //Limpar tela dos frames desenhador pelo AtualizarJogo
+        //Pode ser explicado, também como "pintar o cenário" antes de desenhar
 
         DesenharJogo(); //Desenha o menu, player, inimigo, textos etc.
 
@@ -24,7 +30,7 @@ int main(){
         //Tudo que for visual fica entre eles
     }
 
-    CloseWindow();
-    return 0;
+    CloseWindow(); //Após executar o looping eu fecho a janela
+    return 0; //O programa terminou com sucesso
 
 }
