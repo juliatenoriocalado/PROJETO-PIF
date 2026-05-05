@@ -261,18 +261,19 @@ void AtualizarJogo(){
 
             if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){ //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
 
-                int ataque_de_rajada = 0;
+                int ataque_de_rajada = 0; //Aqui é só uma marcação ou variável temporária para dizer que o ataque que está por vir não é do tipo rajada
+                // = 0, ataque normal. Se fosse = 1, seria ataque rajada, mas por enquanto é normal porque falta a condição para coemçar os rajadas.
 
-                if (tiros_rajada_restantes > 0){
-                    tiros_rajada_restantes--;
-                    ataque_de_rajada = 1;
-                }
+                if (tiros_rajada_restantes > 0){ //Se existe rajada restante, guardada ou esperando
+                    tiros_rajada_restantes--; //Usa o tiro rajada
+                    ataque_de_rajada = 1; //Simboliza ou marca que esse ataque é rajada
+                } //Se não tem rajada, conta ataques normais
 
                 else if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){ //Ativa configuração para o modo 2 (que é o modo de quando o inimigo fica com metade da vida)
                     contador_ataques_inimigo++; //Começa a contar a quantidade de ataques
 
                     if (contador_ataques_inimigo >= QUANTIDADE_DE_ATAQUES_PARA_RAJADA){ //Se a quantidade de ataques for igual a quantidade de ataques para a rajada 
-                        tiros_rajada_restantes = 1; //Ele conta a rajada
+                        tiros_rajada_restantes = 1; //Ele marca o ataque como rajada
                         contador_ataques_inimigo = 0; //Zera o contador para contar de novo
                     }
                 }
@@ -280,7 +281,7 @@ void AtualizarJogo(){
                 avisando_ataque_inimigo = 1;
 
                 if (ataque_de_rajada){
-                    tempo_aviso_ataque_inimigo = 0.08f;
+                    tempo_aviso_ataque_inimigo = INTERVALO_RAJADA_BOSS;
                 }else{
                     tempo_aviso_ataque_inimigo = TEMPO_AVISO_ATAQUE_INIMIGO;
                 }
