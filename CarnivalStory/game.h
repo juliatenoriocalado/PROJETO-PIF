@@ -16,8 +16,8 @@
 #define COORDENADA_CHAO 500 //Coordenada que o personagem vai iniciar no jogo (em Raylib, o eixo Y começa do 0, no TOPO da tela e vai descendo para baixo, por isso que é 500, porque a tela é 600)
 #define INTENSIDADE_PULO -10.0f //Intensidade com que o jogador pula
 #define GRAVIDADE 0.5f //Gravidade definida (cair mais lento mais rápido...)
-#define TOTAL_CENAS_FINAIS 3 (Quantidade de cenas que serão exibidas no final, quando o jogo acabar)
-#define LARGURA_PROJETIL 45 (largura ou grossura do projétil, tamanho pra os lados)
+#define TOTAL_CENAS_FINAIS 3 //Quantidade de cenas que serão exibidas no final, quando o jogo acabar)
+#define LARGURA_PROJETIL 45 //largura ou grossura do projétil, tamanho pra os lados)
 #define ALTURA_PROJETIL 30 
 #define ALTURA_PROJETIL_RASTEIRO (COORDENADA_CHAO - ALTURA_PROJETIL) //Para o primeiro iniciar bem perto do chão e forçar ele a pular
 #define VIDA_MAX_INIMIGO 500 
