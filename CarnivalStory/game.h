@@ -17,6 +17,7 @@
 #define INTENSIDADE_PULO -10.0f //Intensidade com que o jogador pula
 #define GRAVIDADE 0.5f //Gravidade definida (cair mais lento mais rápido...)
 #define TOTAL_CENAS_FINAIS 3 //Quantidade de cenas que serão exibidas no final, quando o jogo acabar)
+#define TOTAL_CENAS_TRANSICAO_BOSS 3
 #define LARGURA_PROJETIL 45 //largura ou grossura do projétil, tamanho pra os lados)
 #define ALTURA_PROJETIL 30 
 #define ALTURA_PROJETIL_RASTEIRO (COORDENADA_CHAO - ALTURA_PROJETIL) //Para o primeiro iniciar bem perto do chão e forçar ele a pular
@@ -47,8 +48,10 @@
 
 typedef enum { //Controlar que tela está ativa
     tela_menu,
-    tela_batalha,
     tela_animacaoIntro,
+    tela_batalha_boss1,
+    tela_transicao_boss,
+    tela_batalha_boss2,
     tela_animacaoFinal,
     tela_GameOver
 } Telas;
