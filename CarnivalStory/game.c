@@ -34,6 +34,7 @@ float tempo_sem_receber_dano = 0; //Para o jogador não receber dano várias vez
 float tempo_recebendo_dano_jogador = 0; //Tempo, segundos, por isso float, que o jogador fica com o EFEITO VISUAL de dano
 int atacando = 0; //Se o jogador está atacando
 int aparando = 0; //Se o jogador está aparando
+float tempo_incapacitado_jogador = 0; //Tempo em que a Rose fica sem poder atacar nem aparar
 
 Inimigo inimigo;
 Projetil_Inimigo projetil_inimigo;
@@ -44,6 +45,8 @@ float tempo_texto_dano = 0; //Tempo em que o Boss leva dano
 float cooldown_projetil = 0;
 int contador_ataques_inimigo = 0; //Para soltar uma possível "rajada"
 int tiros_rajada_restantes = 0; //Controla para saber se falta tiros de rajada extra faltando, exemplo: 1 (tem tiro extra), 0 (não tem tiro extra)
+int contador_ataques_especiais_boss2 = 0; //Conta quantos ataques o Boss 2 fez
+int proximo_projetil_especial = 0; //Marca se o próximo projétil será normal ou especial
 
 float tempo_parry; //Quanto tempo para o parry dura
 float cooldown_parry = 0; //Quanto tempo para o parry poder ser usado de novo
@@ -55,16 +58,25 @@ float tempo_texto_parry = 0; //Tempo em que o texto "APAROU!" é exibido
 //                                                                            Inicalização do jogo! 
 //==============================================================================================================================================================================================
 
-void Boss2(){ 
-    inimigo.vida = 700;
+void Boss2(){
+
+    //Aqui a gente tá reiniciando tudo tudo tudo, porque se não fizermos isso o jogador vai chegar com a vida que sobrou do Boss 1, por exemplo, e outras configurações já ativadas que podem prejudicar o controle do jogador
+
+    jogador.vida = VIDA_MAX_JOGADOR;
+    inimigo.vida = VIDA_MAX_INIMIGO_BOSS2;
     inimigo.posicao = (Vector2){640, COORDENADA_CHAO - 120};
 
     projetil_inimigo.ativo = 0;
     projetil_inimigo.rebatido = 0;
+    projetil_inimigo.especial = 0;
 
     cooldown_projetil = 0;
     contador_ataques_inimigo = 0;
     tiros_rajada_restantes = 0;
+
+    tempo_sem_receber_dano = 0;
+    tempo_recebendo_dano_jogador = 0;
+    tempo_incapacitado_jogador = 0;
 }
 
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
@@ -89,6 +101,7 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
 
     tempo_recebendo_dano_jogador = 0;
     tempo_recebendo_dano_inimigo = 0;
+    tempo_incapacitado_jogador = 0;
     tempo_texto_dano = 0;
 
     avisando_ataque_inimigo = 0;
@@ -112,6 +125,7 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     projetil_inimigo.velocidade = VELOCIDADE_PROJETIL_FASE1;
     projetil_inimigo.ativo = 0;
     projetil_inimigo.rebatido = 0;
+    projetil_inimigo.especial = 0;
     cooldown_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
 
     tempo_sem_receber_dano = 0;
@@ -154,7 +168,7 @@ void AtualizarJogo(){
 
             //Se eu estou pressionando A e eu não estava atacando...
 
-            if (IsKeyPressed(KEY_A) && !atacando){
+            if (IsKeyPressed(KEY_A) && !atacando && tempo_incapacitado_jogador <= 0){
                 atacando = 1;
                 tempo_ataque = TEMPO_ATAQUE;
 
@@ -452,11 +466,17 @@ void AtualizarJogo(){
             if (jogador.posicao.x < 20) jogador.posicao.x = 20;
             if (jogador.posicao.x > LARGURA_TELA - 20) jogador.posicao.x = LARGURA_TELA - 20;
 
+            if (tempo_incapacitado_jogador > 0){
+                tempo_incapacitado_jogador -= GetFrameTime();
 
+                if (tempo_incapacitado_jogador < 0){
+                    tempo_incapacitado_jogador = 0;
+                }
+            } 
 
             //Se eu estou pressionando A e eu não estava atacando...
 
-            if (IsKeyPressed(KEY_A) && !atacando){
+            if (IsKeyPressed(KEY_A) && !atacando && tempo_incapacitado_jogador <= 0){
                 atacando = 1;
                 tempo_ataque = TEMPO_ATAQUE;
 
@@ -549,7 +569,7 @@ void AtualizarJogo(){
 
             //Ativar parry com Q
 
-            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando){
+            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && tempo_incapacitado_jogador <= 0){
                 aparando = 1;
                 tempo_parry = TEMPO_PARRY;
                 cooldown_parry = COOLDOWN_PARRY;
@@ -565,11 +585,11 @@ void AtualizarJogo(){
                 }
             }
 
-            float velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE1;
+            float velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE2;
 
-            float tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
+            float tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE2;
 
-            if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){
+            if (inimigo.vida <= VIDA_MAX_INIMIGO_BOSS2 / 2){
                 velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE2;
                 tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE2;
             }
@@ -582,6 +602,17 @@ void AtualizarJogo(){
 
             //Lógica projétil
 
+            contador_ataques_especiais_boss2++;
+
+            //Lógica para ataque especial (se for especial e se não for)
+
+            if (contador_ataques_especiais_boss2 >= QUANTIDADE_ATAQUES_PARA_ESPECIAL_BOSS2){
+                proximo_projetil_especial = 1;
+                contador_ataques_especiais_boss2 = 0;
+            }else{
+                proximo_projetil_especial = 0;
+            }
+
             if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){ //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
 
                 int ataque_de_rajada = 0; //Aqui é só uma marcação ou variável temporária para dizer que o ataque que está por vir não é do tipo rajada
@@ -592,11 +623,11 @@ void AtualizarJogo(){
                     ataque_de_rajada = 1; //Simboliza ou marca que esse ataque é rajada
                 } //Se não tem rajada, conta ataques normais
 
-                else if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){ //Ativa configuração para o modo 2 (que é o modo de quando o inimigo fica com metade da vida)
+                else if (inimigo.vida <= VIDA_MAX_INIMIGO_BOSS2 / 2){ //Ativa configuração para o modo 2 (que é o modo de quando o inimigo fica com metade da vida)
                     contador_ataques_inimigo++; //Começa a contar a quantidade de ataques
 
                     if (contador_ataques_inimigo >= QUANTIDADE_DE_ATAQUES_PARA_RAJADA){ //Se a quantidade de ataques for igual a quantidade de ataques para a rajada 
-                        tiros_rajada_restantes = 1; //Ele marca o ataque como rajada
+                        tiros_rajada_restantes = TIROS_EXTRAS_RAJADA_BOSS2; //Ele marca o ataque como rajada
                         contador_ataques_inimigo = 0; //Zera o contador para contar de novo
                     }
                 }
@@ -611,6 +642,8 @@ void AtualizarJogo(){
 
             }
 
+            //PROJÉTIL SURGE!
+
             if (avisando_ataque_inimigo){
                 tempo_aviso_ataque_inimigo -= GetFrameTime();
 
@@ -618,6 +651,7 @@ void AtualizarJogo(){
                     avisando_ataque_inimigo = 0;
                     projetil_inimigo.ativo = 1;
                     projetil_inimigo.rebatido = 0;
+                    projetil_inimigo.especial = proximo_projetil_especial;
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -710,7 +744,14 @@ void AtualizarJogo(){
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
 
             else if (projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
-                jogador.vida -= 10;
+               
+                if (projetil_inimigo.especial){
+                    jogador.vida -= 5;
+                    tempo_incapacitado_jogador = TEMPO_INCAPACITADO_JOGADOR;
+                }else{
+                    jogador.vida -= 10;
+                }
+
                 tempo_sem_receber_dano = 1.0f;
                 tempo_recebendo_dano_jogador = 0.2f;
 
@@ -922,12 +963,21 @@ void DesenharJogo(){
             }
 
             if (projetil_inimigo.ativo){
+
                 if (projetil_inimigo.rebatido){
-                    DrawRectangleRec(projetil_inimigo.corpo, SKYBLUE);
+                    DrawRectangleRec(projetil_inimigo.corpo, SKYBLUE); //Projétil rebatido
+
+                }else if (projetil_inimigo.especial){
+                    DrawRectangleRec(projetil_inimigo.corpo, PURPLE); //Projétil especial
+
                 }else{
-                    DrawRectangleRec(projetil_inimigo.corpo, ORANGE);
+                    DrawRectangleRec(projetil_inimigo.corpo, ORANGE); //Projétil normal
                 }
 
+            }
+
+            if (tempo_incapacitado_jogador > 0){
+                DrawText("SILENCIADO!", jogador.posicao.x - 35, jogador.posicao.y - 70,20,PURPLE); 
             }
 
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);

@@ -40,6 +40,10 @@
 #define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f //Duração do aviso antes de o inimigo atacar (antes de ele atacar)
 #define QUANTIDADE_DE_ATAQUES_PARA_RAJADA 3 //A cada três ataques na fase dois 
 #define INTERVALO_RAJADA_BOSS 0.001f //Tempo de espera entre um tiro e o próximo configurado como rajada
+#define VIDA_MAX_INIMIGO_BOSS2 700
+#define TEMPO_INCAPACITADO_JOGADOR 2.0f //Tempo incapacitado de atacar ou aparar
+#define QUANTIDADE_ATAQUES_PARA_ESPECIAL_BOSS2 4 //A cada 4 ataques vem o ataque especial do Boss 2
+#define TIROS_EXTRAS_RAJADA_BOSS2 2 //A rajada do Boss 2 tem o tiro normal + 2 extras bem rápidos
 
 
 //==============================================
@@ -86,6 +90,7 @@ typedef struct {
     float velocidade;
     int ativo;
     int rebatido;
+    int especial;
 } Projetil_Inimigo;
 
 //Protótipo das funções do jogo
