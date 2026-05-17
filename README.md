@@ -38,20 +38,16 @@ vida 100 até 0:
 - cooldown 0.7s
 - talvez às vezes dispara 2 projéteis seguidos
 
-Boss 2 - Marionete
+Boss 2 fase 1
+velocidade de fase 2 do Boss 1
+cooldown de fase 2 do Boss 1
+rajada com 2 ou 3 tiros
+ataque especial a cada 4 ataques
 
-testar reflexo
-testar parry
-testar leitura de padrão
-parecer mais assustadora e imprevisível
-
-Ela pode ter:
-
-projéteis em alturas diferentes
-ataque falso
-sequência de 3 projéteis
-cooldown menor
-fase 2 mais agressiva
+Boss 2 fase 2
+ataque especial a cada 3 ataques
+rajada mais frequente
+talvez projétil um pouco mais rápido
 
 DIFERENÇA ENTRE OS BOSSES
 
