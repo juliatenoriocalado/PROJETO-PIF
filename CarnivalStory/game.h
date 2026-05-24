@@ -29,7 +29,7 @@
 #define LARGURA_ATAQUE 60  //Largura do ataque do jogador
 #define ALTURA_ATAQUE 40 //Altura do ataque do jogador
 #define TEMPO_ATAQUE 0.15f //Tempo que marca quando a Rose recebe dano (é para mostrar visualmente e desenhar na hora)
-#define TEMPO_PARRY 0.18f //Tempo para acertar o parry
+#define TEMPO_PARRY 0.15f //Tempo para acertar o parry
 #define COOLDOWN_PARRY 0.7f //Tempo de recarregar o parry
 #define DANO_PARRY 5 //Dano que o boss leva ao ser aparado
 #define AREA_PARRY 30 //Tamanho visual do parry (quanto maior, mais fácil de acertar, porque ele mede a colisão entre o projétil e o jogador)
@@ -38,12 +38,21 @@
 #define TEMPO_COOLDOWN_PROJETIL_FASE1 0.6f
 #define TEMPO_COOLDOWN_PROJETIL_FASE2 0.45f
 #define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f //Duração do aviso antes de o inimigo atacar (antes de ele atacar)
-#define QUANTIDADE_DE_ATAQUES_PARA_RAJADA 3 //A cada três ataques na fase dois 
-#define INTERVALO_RAJADA_BOSS 0.001f //Tempo de espera entre um tiro e o próximo configurado como rajada
+#define QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS1 3 //A cada três ataques na fase dois 
+#define INTERVALO_RAJADA_BOSS 0.03f //Tempo de espera entre um tiro e o próximo configurado como rajada
 #define VIDA_MAX_INIMIGO_BOSS2 700
-#define TEMPO_INCAPACITADO_JOGADOR 2.0f //Tempo incapacitado de atacar ou aparar
-#define QUANTIDADE_ATAQUES_PARA_ESPECIAL_BOSS2 4 //A cada 4 ataques vem o ataque especial do Boss 2
+#define TEMPO_INCAPACITADO_JOGADOR 5.0f //Tempo incapacitado de atacar ou aparar
+#define QUANTIDADE_ATAQUES_PARA_ESPECIAL_BOSS2 3 //A cada 4 ataques vem o ataque especial do Boss 2
 #define TIROS_EXTRAS_RAJADA_BOSS2 2 //A rajada do Boss 2 tem o tiro normal + 2 extras bem rápidos
+#define VELOCIDADE_PROJETIL_FASE1_BOSS2 16.0f
+#define VELOCIDADE_PROJETIL_FASE2_BOSS2 22.0f
+#define TEMPO_COOLDOWN_BOSS2_FASE1 0.35f
+#define TEMPO_COOLDOWN_BOSS2_FASE2 0.25f
+#define QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS2_FASE1 3
+#define QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS2_FASE2 2
+#define TIROS_EXTRAS_RAJADA_BOSS2_FASE1 1
+#define TIROS_EXTRAS_RAJADA_BOSS2_FASE2 2
+
 
 
 //==============================================

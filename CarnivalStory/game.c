@@ -74,6 +74,9 @@ void Boss2(){
     contador_ataques_inimigo = 0;
     tiros_rajada_restantes = 0;
 
+    contador_ataques_especiais_boss2 = 0;
+    proximo_projetil_especial = 0;
+
     tempo_sem_receber_dano = 0;
     tempo_recebendo_dano_jogador = 0;
     tempo_incapacitado_jogador = 0;
@@ -303,10 +306,10 @@ void AtualizarJogo(){
                     ataque_de_rajada = 1; //Simboliza ou marca que esse ataque é rajada
                 } //Se não tem rajada, conta ataques normais
 
-                else if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){ //Ativa configuração para o modo 2 (que é o modo de quando o inimigo fica com metade da vida)
+                else if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){ 
                     contador_ataques_inimigo++; //Começa a contar a quantidade de ataques
 
-                    if (contador_ataques_inimigo >= QUANTIDADE_DE_ATAQUES_PARA_RAJADA){ //Se a quantidade de ataques for igual a quantidade de ataques para a rajada 
+                    if (contador_ataques_inimigo >= QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS1){ //Se a quantidade de ataques for igual a quantidade de ataques para a rajada 
                         tiros_rajada_restantes = 1; //Ele marca o ataque como rajada
                         contador_ataques_inimigo = 0; //Zera o contador para contar de novo
                     }
@@ -319,7 +322,6 @@ void AtualizarJogo(){
                 }else{
                     tempo_aviso_ataque_inimigo = TEMPO_AVISO_ATAQUE_INIMIGO;
                 }
-
             }
 
             if (avisando_ataque_inimigo){
@@ -585,13 +587,18 @@ void AtualizarJogo(){
                 }
             }
 
-            float velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE2;
+            float velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE1_BOSS2;
+            float tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_BOSS2_FASE1;
 
-            float tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE2;
+            int quantidade_ataques_para_rajada_atual = QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS2_FASE1;
+            int tiros_extras_rajada_atual = TIROS_EXTRAS_RAJADA_BOSS2_FASE1;
 
             if (inimigo.vida <= VIDA_MAX_INIMIGO_BOSS2 / 2){
-                velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE2;
-                tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_PROJETIL_FASE2;
+                velocidade_atual_projetil = VELOCIDADE_PROJETIL_FASE2_BOSS2;
+                tempo_cooldown_atual_projetil = TEMPO_COOLDOWN_BOSS2_FASE2;
+
+                quantidade_ataques_para_rajada_atual = QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS2_FASE2;
+                tiros_extras_rajada_atual = TIROS_EXTRAS_RAJADA_BOSS2_FASE2;
             }
 
             //Cooldown do Boss
@@ -602,34 +609,31 @@ void AtualizarJogo(){
 
             //Lógica projétil
 
-            contador_ataques_especiais_boss2++;
+            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){
+                
+                int ataque_de_rajada = 0;
 
-            //Lógica para ataque especial (se for especial e se não for)
+                if (tiros_rajada_restantes > 0){
+                    tiros_rajada_restantes--;
+                    ataque_de_rajada = 1;
+                }
+                else{
+                    contador_ataques_inimigo++;
 
-            if (contador_ataques_especiais_boss2 >= QUANTIDADE_ATAQUES_PARA_ESPECIAL_BOSS2){
-                proximo_projetil_especial = 1;
-                contador_ataques_especiais_boss2 = 0;
-            }else{
-                proximo_projetil_especial = 0;
-            }
-
-            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){ //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
-
-                int ataque_de_rajada = 0; //Aqui é só uma marcação ou variável temporária para dizer que o ataque que está por vir não é do tipo rajada
-                // = 0, ataque normal. Se fosse = 1, seria ataque rajada, mas por enquanto é normal porque falta a condição para coemçar os rajadas.
-
-                if (tiros_rajada_restantes > 0){ //Se existe rajada restante, guardada ou esperando
-                    tiros_rajada_restantes--; //Usa o tiro rajada
-                    ataque_de_rajada = 1; //Simboliza ou marca que esse ataque é rajada
-                } //Se não tem rajada, conta ataques normais
-
-                else if (inimigo.vida <= VIDA_MAX_INIMIGO_BOSS2 / 2){ //Ativa configuração para o modo 2 (que é o modo de quando o inimigo fica com metade da vida)
-                    contador_ataques_inimigo++; //Começa a contar a quantidade de ataques
-
-                    if (contador_ataques_inimigo >= QUANTIDADE_DE_ATAQUES_PARA_RAJADA){ //Se a quantidade de ataques for igual a quantidade de ataques para a rajada 
-                        tiros_rajada_restantes = TIROS_EXTRAS_RAJADA_BOSS2; //Ele marca o ataque como rajada
-                        contador_ataques_inimigo = 0; //Zera o contador para contar de novo
+                    if (contador_ataques_inimigo >= quantidade_ataques_para_rajada_atual){
+                        tiros_rajada_restantes = tiros_extras_rajada_atual;
+                        contador_ataques_inimigo = 0;
                     }
+                }
+
+                //Ataque de silenciamento do Boss 2
+                contador_ataques_especiais_boss2++;
+
+                if (contador_ataques_especiais_boss2 >= QUANTIDADE_ATAQUES_PARA_ESPECIAL_BOSS2){
+                    proximo_projetil_especial = 1;
+                    contador_ataques_especiais_boss2 = 0;
+                }else{
+                    proximo_projetil_especial = 0;
                 }
 
                 avisando_ataque_inimigo = 1;
@@ -983,7 +987,7 @@ void DesenharJogo(){
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
             DrawText(TextFormat("Inimigo HP: %d", inimigo.vida), 50,130,20,RED);
 
-            if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){
+            if (inimigo.vida <= VIDA_MAX_INIMIGO_BOSS2 / 2){
                 DrawText("FASE 2",650,50,20,RED);
             }
 
@@ -992,7 +996,7 @@ void DesenharJogo(){
             }
 
             DrawRectangle(50,160,300,20,DARKGRAY);
-            float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO) * 300;
+            float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO_BOSS2) * 300;
             if (larguraVidaBoss < 0){
                 larguraVidaBoss = 0;
             }
