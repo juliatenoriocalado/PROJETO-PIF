@@ -26,6 +26,13 @@ const char *textos_transicao_boss[] = {
     "Entretanto, uma força maior se aproximava, mais forte, mais assutadora...",
     "'Será que sou capaz disso?...' pensou Rose."
 };
+// ANIMAÇÕES DE CHEFES
+animacao boss1_idle;
+animacao boss1_attack;
+animacao boss1_hurt;
+
+int animacao_atual_boss1 = 0;
+
 
 Jogador jogador;
 Rectangle ataque_jogador; //Cria uma variável do tipo Rectangle para definir o dano do jogador (Por enquanto...)
@@ -82,6 +89,101 @@ void Boss2(){
     tempo_incapacitado_jogador = 0;
 }
 
+void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, int frames_totais, float intervalo, int repetindo){
+    animacao -> frames_totais = frames_totais;
+    animacao -> frame_atual = 0;
+    animacao -> tempo =0;
+    animacao -> intervalo = intervalo;
+    animacao->repetindo = repetindo;
+    animacao->terminou = 0;
+
+    for (int i = 0; i < frames_totais; i++){
+        char caminho [200];
+
+        sprintf (caminho, "%s/%s%d.png", pasta, prefixo, i+1);
+        animacao -> frames[i] = LoadTexture (caminho);
+
+        if (animacao->frames[i].id == 0) {
+            printf("Erro ao carregar textura: %s\n", caminho);
+        }
+
+    }
+}
+
+void CarregarAssets() {
+    LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", FRAMES_ANIMACAO, 0.12f, 1);
+    LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", FRAMES_ANIMACAO, 0.08f, 0);
+    LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", FRAMES_ANIMACAO, 0.08f, 0);
+}
+
+void UnloadAnimacao(animacao *animacao) {
+    for (int i = 0; i < animacao->frames_totais; i++) {
+        UnloadTexture(animacao->frames[i]);
+    }
+}
+
+void DescarregarAssets() {
+    UnloadAnimacao(&boss1_idle);
+    UnloadAnimacao(&boss1_attack);
+    UnloadAnimacao(&boss1_hurt);
+}
+
+void AtualizarAnimacao(animacao *animacao) {
+    if (animacao->terminou) {
+        return;
+    }
+
+    animacao->tempo += GetFrameTime();
+
+    if (animacao->tempo >= animacao->intervalo) {
+        animacao->tempo = 0;
+        animacao->frame_atual++;
+
+        if (animacao->frame_atual >= animacao->frames_totais) {
+            if (animacao->repetindo) {
+                animacao->frame_atual = 0;
+            } else {
+                animacao->frame_atual = animacao->frames_totais - 1;
+                animacao->terminou = 1;
+            }
+        }
+    }
+}
+
+void ReiniciarAnimacao(animacao *animacao) {
+    animacao->frame_atual = 0;
+    animacao->tempo = 0;
+    animacao->terminou = 0;
+}
+
+void TrocarAnimacaoBoss1(int nova_animacao) {
+
+    // Se o boss está atacando, o hurt não pode interromper
+    if (animacao_atual_boss1 == 1 && nova_animacao == 2) {
+        return;
+    }
+
+    // Se já está na mesma animação
+    if (animacao_atual_boss1 == nova_animacao) {
+
+        // Mas se for outro ataque, reinicia o ataque
+        if (nova_animacao == 1) {
+            ReiniciarAnimacao(&boss1_attack);
+        }
+
+        return;
+    }
+
+    animacao_atual_boss1 = nova_animacao;
+
+    if (nova_animacao == 1) {
+        ReiniciarAnimacao(&boss1_attack);
+    }
+    else if (nova_animacao == 2) {
+        ReiniciarAnimacao(&boss1_hurt);
+    }
+}
+
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
 
     jogador.posicao = (Vector2){400, COORDENADA_CHAO}; //X = 400 (posição horizontal) e Y = COORDENADA_CHAO (começa no)
@@ -132,6 +234,11 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     cooldown_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
 
     tempo_sem_receber_dano = 0;
+    
+    animacao_atual_boss1 = 0;
+    ReiniciarAnimacao(&boss1_idle);
+    ReiniciarAnimacao(&boss1_attack);
+    ReiniciarAnimacao(&boss1_hurt); //aqui reiniciamos a animação para idle para n ter conflito ao iniciar de novo
 
     //Em c não temos boleano, então a gente define 1 para estar ativo e 0 para desativado.
 
@@ -193,6 +300,7 @@ void AtualizarJogo(){
                     inimigo.vida -= 10;
                     tempo_recebendo_dano_inimigo = 0.15f;
                     tempo_texto_dano = 0.3f;
+                    TrocarAnimacaoBoss1(2);
                 
                 }
             }
@@ -316,6 +424,7 @@ void AtualizarJogo(){
                 }
 
                 avisando_ataque_inimigo = 1;
+                TrocarAnimacaoBoss1(1);
 
                 if (ataque_de_rajada){
                     tempo_aviso_ataque_inimigo = INTERVALO_RAJADA_BOSS;
@@ -406,13 +515,24 @@ void AtualizarJogo(){
                 inimigo.vida -= 20;
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
+                TrocarAnimacaoBoss1(2);
 
                 projetil_inimigo.ativo = 0;
                 projetil_inimigo.rebatido = 0;
 
+                float distancia_horizontal_boss = inimigo.posicao.x - jogador.posicao.x;
+
+                if (distancia_horizontal_boss < 0) {
+                    distancia_horizontal_boss = distancia_horizontal_boss * -1;
+                }
+
                 if (tiros_rajada_restantes > 0){
                     cooldown_projetil = INTERVALO_RAJADA_BOSS;
-                }else{
+                }
+                else if (distancia_horizontal_boss < 180){
+                    cooldown_projetil = tempo_cooldown_atual_projetil + 0.7f;
+                }
+                else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
                 }
 
@@ -430,9 +550,19 @@ void AtualizarJogo(){
                 projetil_inimigo.ativo = 0;
                 projetil_inimigo.rebatido = 0;
 
+                float distancia_horizontal_boss = inimigo.posicao.x - jogador.posicao.x;
+
+                if (distancia_horizontal_boss < 0) {
+                    distancia_horizontal_boss = distancia_horizontal_boss * -1;
+                }
+
                 if (tiros_rajada_restantes > 0){
                     cooldown_projetil = INTERVALO_RAJADA_BOSS;
-                }else{
+                }
+                else if (distancia_horizontal_boss < 180){
+                    cooldown_projetil = tempo_cooldown_atual_projetil + 0.7f;
+                }
+                else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
                 }
 
@@ -452,6 +582,24 @@ void AtualizarJogo(){
                 ModoDoJogo = tela_transicao_boss;
             }
 
+
+            if (animacao_atual_boss1 == 1) {
+                AtualizarAnimacao(&boss1_attack);
+
+                if (boss1_attack.terminou) {
+                    animacao_atual_boss1 = 0;
+                }
+            }
+            else if (animacao_atual_boss1 == 2) {
+                AtualizarAnimacao(&boss1_hurt);
+
+                if (boss1_hurt.terminou) {
+                    animacao_atual_boss1 = 0;
+                }
+            }
+            else {
+                AtualizarAnimacao(&boss1_idle);
+            }
             break;
         
          }
@@ -500,7 +648,6 @@ void AtualizarJogo(){
                     inimigo.vida -= 10;
                     tempo_recebendo_dano_inimigo = 0.15f;
                     tempo_texto_dano = 0.3f;
-                
                 }
             }
 
@@ -731,6 +878,7 @@ void AtualizarJogo(){
                 inimigo.vida -= 20;
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
+                
 
                 projetil_inimigo.ativo = 0;
                 projetil_inimigo.rebatido = 0;
@@ -864,13 +1012,46 @@ void DesenharJogo(){
                 DrawRectangleLinesEx(ataque_jogador,2,PINK);
             }
 
-            Color corInimigo = RED;
+            // Color corInimigo = RED;
 
-            if (tempo_recebendo_dano_inimigo > 0){
-                corInimigo = WHITE;
+            // if (tempo_recebendo_dano_inimigo > 0){
+            //     corInimigo = WHITE;
+            // }
+
+            // DrawRectangleV(inimigo.posicao, (Vector2){80,100}, corInimigo);
+            animacao *animacaoBoss = &boss1_idle;
+
+            if (animacao_atual_boss1 == 1) {
+                animacaoBoss = &boss1_attack;
+            }
+            else if (animacao_atual_boss1 == 2) {
+                animacaoBoss = &boss1_hurt;
             }
 
-            DrawRectangleV(inimigo.posicao, (Vector2){80,100}, corInimigo);
+            Texture2D frameBoss = animacaoBoss->frames[animacaoBoss->frame_atual];
+
+            Rectangle origemBoss = {
+                0,
+                0,
+                frameBoss.width,
+                frameBoss.height
+            };
+
+            Rectangle destinoBoss = {
+                inimigo.posicao.x - 20,
+                inimigo.posicao.y - 30,
+                120,
+                140
+            };
+
+            DrawTexturePro(
+                frameBoss,
+                origemBoss,
+                destinoBoss,
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
 
             if (tempo_texto_dano > 0){
                 DrawText("ATACOU!", inimigo.posicao.x + 10, inimigo.posicao.y - 30, 20, YELLOW);

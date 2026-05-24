@@ -52,6 +52,7 @@
 #define QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS2_FASE2 2
 #define TIROS_EXTRAS_RAJADA_BOSS2_FASE1 1
 #define TIROS_EXTRAS_RAJADA_BOSS2_FASE2 2
+#define FRAMES_ANIMACAO 9
 
 
 
@@ -102,10 +103,27 @@ typedef struct {
     int especial;
 } Projetil_Inimigo;
 
+//==============================================
+//             Estrutura de animação
+//==============================================
+
+
+typedef struct {
+    Texture2D frames[FRAMES_ANIMACAO];
+    int frames_totais;
+    int frame_atual;
+    float tempo;
+    float intervalo;
+    int repetindo;
+    int terminou;
+} animacao;
+
 //Protótipo das funções do jogo
 
 void InitGame();
 void AtualizarJogo();
 void DesenharJogo();
+void CarregarAssets();
+void DescarregarAssets();
 
 #endif

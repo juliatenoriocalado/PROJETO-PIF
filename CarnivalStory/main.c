@@ -11,6 +11,7 @@ int main(){
 
     InitWindow(LARGURA_TELA,ALTURA_TELA,"Carnival Story");
     SetTargetFPS(60); //Função da Raylib que define os frames por segundo (FPS), sem isso, o while poderia rodar rápido demais (dependendo do pc), o que poderia prejudicar o desempenho do computador (se for alto demais).
+    CarregarAssets(); //Carrega e prepara as imagens que vamos atualizar em várias structs;
     InitGame(); //Marca o início do jogo
 
     while (!WindowShouldClose()){ //Enquanto a janela NÃO estiver fechada, continue rodando o jogo nesse lopíng
@@ -29,7 +30,8 @@ int main(){
         //Tanto o BeginDrawing e o EndDrawing são necessários, porque o jogo desenha a tela várias vezez por segundo, tipo 60 FPS
         //Tudo que for visual fica entre eles
     }
-
+    
+    DescarregarAssets(); //Tira as animações da memória - Rafa
     CloseWindow(); //Após executar o looping eu fecho a janela
     return 0; //O programa terminou com sucesso
 
