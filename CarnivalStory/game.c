@@ -33,6 +33,13 @@ animacao boss1_hurt;
 
 int animacao_atual_boss1 = 0;
 
+animacao boss2_idle;
+animacao boss2_attack;
+animacao boss2_special;
+animacao boss2_hurt;
+
+int animacao_atual_boss2 = 0;
+
 
 Jogador jogador;
 Rectangle ataque_jogador; //Cria uma variável do tipo Rectangle para definir o dano do jogador (Por enquanto...)
@@ -64,12 +71,13 @@ float tempo_texto_parry = 0; //Tempo em que o texto "APAROU!" é exibido
 //==============================================================================================================================================================================================
 //                                                                            Inicalização do jogo! 
 //==============================================================================================================================================================================================
-
+void ReiniciarAnimacao(animacao *animacao);
 void Boss2(){
 
     //Aqui a gente tá reiniciando tudo tudo tudo, porque se não fizermos isso o jogador vai chegar com a vida que sobrou do Boss 1, por exemplo, e outras configurações já ativadas que podem prejudicar o controle do jogador
 
     jogador.vida = VIDA_MAX_JOGADOR;
+    jogador.posicao = (Vector2){200, COORDENADA_CHAO};
     inimigo.vida = VIDA_MAX_INIMIGO_BOSS2;
     inimigo.posicao = (Vector2){640, COORDENADA_CHAO - 120};
 
@@ -87,6 +95,12 @@ void Boss2(){
     tempo_sem_receber_dano = 0;
     tempo_recebendo_dano_jogador = 0;
     tempo_incapacitado_jogador = 0;
+    
+    animacao_atual_boss2 = 0;
+    ReiniciarAnimacao(&boss2_idle);
+    ReiniciarAnimacao(&boss2_attack);
+    ReiniciarAnimacao(&boss2_special);
+    ReiniciarAnimacao(&boss2_hurt);
 }
 
 void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, int frames_totais, float intervalo, int repetindo){
@@ -114,7 +128,13 @@ void CarregarAssets() {
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", FRAMES_ANIMACAO, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", FRAMES_ANIMACAO, 0.08f, 0);
     LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", FRAMES_ANIMACAO, 0.08f, 0);
+
+    LoadAnimacao(&boss2_idle, "assets/boss2/idle", "idle", 9, 0.12f, 1);
+    LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 5, 0.10f, 0);
+    LoadAnimacao(&boss2_special, "assets/boss2/special", "special", 9, 0.08f, 0);
+    LoadAnimacao(&boss2_hurt, "assets/boss2/hurt", "hurt", 9, 0.08f, 0);
 }
+
 
 void UnloadAnimacao(animacao *animacao) {
     for (int i = 0; i < animacao->frames_totais; i++) {
@@ -126,6 +146,11 @@ void DescarregarAssets() {
     UnloadAnimacao(&boss1_idle);
     UnloadAnimacao(&boss1_attack);
     UnloadAnimacao(&boss1_hurt);
+
+    UnloadAnimacao(&boss2_idle);
+    UnloadAnimacao(&boss2_attack);
+    UnloadAnimacao(&boss2_special);
+    UnloadAnimacao(&boss2_hurt);
 }
 
 void AtualizarAnimacao(animacao *animacao) {
@@ -181,6 +206,41 @@ void TrocarAnimacaoBoss1(int nova_animacao) {
     }
     else if (nova_animacao == 2) {
         ReiniciarAnimacao(&boss1_hurt);
+    }
+}
+
+void TrocarAnimacaoBoss2(int nova_animacao) {
+
+    // Se o Boss 2 está atacando, hurt não interrompe
+    if ((animacao_atual_boss2 == 1 || animacao_atual_boss2 == 2) && nova_animacao == 3) {
+        return;
+    }
+
+    if (animacao_atual_boss2 == nova_animacao) {
+
+        if (nova_animacao == 1) {
+            ReiniciarAnimacao(&boss2_attack);
+        }
+        else if (nova_animacao == 2) {
+            ReiniciarAnimacao(&boss2_special);
+        }
+        else if (nova_animacao == 3) {
+            ReiniciarAnimacao(&boss2_hurt);
+        }
+
+        return;
+    }
+
+    animacao_atual_boss2 = nova_animacao;
+
+    if (nova_animacao == 1) {
+        ReiniciarAnimacao(&boss2_attack);
+    }
+    else if (nova_animacao == 2) {
+        ReiniciarAnimacao(&boss2_special);
+    }
+    else if (nova_animacao == 3) {
+        ReiniciarAnimacao(&boss2_hurt);
     }
 }
 
@@ -648,6 +708,7 @@ void AtualizarJogo(){
                     inimigo.vida -= 10;
                     tempo_recebendo_dano_inimigo = 0.15f;
                     tempo_texto_dano = 0.3f;
+                    TrocarAnimacaoBoss2(3);
                 }
             }
 
@@ -785,10 +846,28 @@ void AtualizarJogo(){
 
                 avisando_ataque_inimigo = 1;
 
+                if (proximo_projetil_especial) {
+                    if (ataque_de_rajada) {
+                        boss2_special.intervalo = 0.025f; // especial acelerado na rajada surpresa
+                    }
+                    else {
+                        boss2_special.intervalo = 0.08f; // velocidade normal do especial
+                    }
+
+                    TrocarAnimacaoBoss2(2);
+                }
+                else {
+                    TrocarAnimacaoBoss2(1);
+                }
+
                 if (ataque_de_rajada){
                     tempo_aviso_ataque_inimigo = INTERVALO_RAJADA_BOSS;
-                }else{
-                    tempo_aviso_ataque_inimigo = TEMPO_AVISO_ATAQUE_INIMIGO;
+                }
+                else if (proximo_projetil_especial){
+                    tempo_aviso_ataque_inimigo = 0.75f;
+                }
+                else{
+                    tempo_aviso_ataque_inimigo = 0.50f;
                 }
 
             }
@@ -878,6 +957,7 @@ void AtualizarJogo(){
                 inimigo.vida -= 20;
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
+                TrocarAnimacaoBoss2(3);
                 
 
                 projetil_inimigo.ativo = 0;
@@ -931,6 +1011,32 @@ void AtualizarJogo(){
                 IndiceCenaFinal = 0;
                 ModoDoJogo = tela_animacaoFinal;
             }
+
+            if (animacao_atual_boss2 == 1) {
+                AtualizarAnimacao(&boss2_attack);
+
+                if (boss2_attack.terminou) {
+                    animacao_atual_boss2 = 0;
+                }
+            }
+            else if (animacao_atual_boss2 == 2) {
+                AtualizarAnimacao(&boss2_special);
+
+                if (boss2_special.terminou) {
+                    animacao_atual_boss2 = 0;
+                }
+            }
+            else if (animacao_atual_boss2 == 3) {
+                AtualizarAnimacao(&boss2_hurt);
+
+                if (boss2_hurt.terminou) {
+                    animacao_atual_boss2 = 0;
+                }
+            }
+            else {
+                AtualizarAnimacao(&boss2_idle);
+            }
+
 
             break;
 
@@ -1038,10 +1144,10 @@ void DesenharJogo(){
             };
 
             Rectangle destinoBoss = {
-                inimigo.posicao.x - 20,
-                inimigo.posicao.y - 30,
-                120,
-                140
+                inimigo.posicao.x - 60,
+                inimigo.posicao.y - 90,
+                240,
+                280
             };
 
             DrawTexturePro(
@@ -1058,8 +1164,21 @@ void DesenharJogo(){
             }
 
             if (avisando_ataque_inimigo){
-                DrawText("!", inimigo.posicao.x + 35, inimigo.posicao.y - 35, 40, YELLOW); //Mostra a exclamação antes do palhaço atacar 
-                DrawRectangleLines(inimigo.posicao.x - 5, inimigo.posicao.y - 5, 90, 110, YELLOW); //Mostra uma aura amarela antes de atacar
+                DrawText(
+                    "!",
+                    destinoBoss.x + 20,
+                    destinoBoss.y + 25,
+                    80,
+                    YELLOW
+                );
+
+                DrawRectangleLines(
+                    destinoBoss.x,
+                    destinoBoss.y,
+                    destinoBoss.width,
+                    destinoBoss.height,
+                    YELLOW
+                );
             }
 
             if (aparando){
@@ -1121,21 +1240,63 @@ void DesenharJogo(){
                 DrawRectangleLinesEx(ataque_jogador,2,PINK);
             }
 
-            Color corInimigo = RED;
+            animacao *animacaoBoss2 = &boss2_idle;
 
-            if (tempo_recebendo_dano_inimigo > 0){
-                corInimigo = WHITE;
+            if (animacao_atual_boss2 == 1) {
+                animacaoBoss2 = &boss2_attack;
+            }
+            else if (animacao_atual_boss2 == 2) {
+                animacaoBoss2 = &boss2_special;
+            }
+            else if (animacao_atual_boss2 == 3) {
+                animacaoBoss2 = &boss2_hurt;
             }
 
-            DrawRectangleV(inimigo.posicao, (Vector2){80,100}, corInimigo);
+            Texture2D frameBoss2 = animacaoBoss2->frames[animacaoBoss2->frame_atual];
+
+            Rectangle origemBoss2 = {
+                0,
+                0,
+                frameBoss2.width,
+                frameBoss2.height
+            };
+
+            Rectangle destinoBoss2 = {
+                inimigo.posicao.x - 70,
+                inimigo.posicao.y - 100,
+                250,
+                300
+            };
+
+            DrawTexturePro(
+                frameBoss2,
+                origemBoss2,
+                destinoBoss2,
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
 
             if (tempo_texto_dano > 0){
                 DrawText("ATACOU!", inimigo.posicao.x + 10, inimigo.posicao.y - 30, 20, YELLOW);
             }
 
             if (avisando_ataque_inimigo){
-                DrawText("!", inimigo.posicao.x + 35, inimigo.posicao.y - 35, 40, YELLOW); //Mostra a exclamação antes do palhaço atacar 
-                DrawRectangleLines(inimigo.posicao.x - 5, inimigo.posicao.y - 5, 90, 110, YELLOW); //Mostra uma aura amarela antes de atacar
+                DrawText(
+                    "!",
+                    destinoBoss2.x + 20,
+                    destinoBoss2.y + 35,
+                    80,
+                    YELLOW
+                );
+
+                DrawRectangleLines(
+                    destinoBoss2.x,
+                    destinoBoss2.y,
+                    destinoBoss2.width,
+                    destinoBoss2.height,
+                    YELLOW
+                );
             }
 
             if (aparando){
