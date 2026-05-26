@@ -33,10 +33,10 @@
 #define COOLDOWN_PARRY 0.7f //Tempo de recarregar o parry
 #define DANO_PARRY 5 //Dano que o boss leva ao ser aparado
 #define AREA_PARRY 30 //Tamanho visual do parry (quanto maior, mais fácil de acertar, porque ele mede a colisão entre o projétil e o jogador)
-#define VELOCIDADE_PROJETIL_FASE1 8.0f
+#define VELOCIDADE_PROJETIL_FASE1 10.0f
 #define VELOCIDADE_PROJETIL_FASE2 15.0f
-#define TEMPO_COOLDOWN_PROJETIL_FASE1 0.6f
-#define TEMPO_COOLDOWN_PROJETIL_FASE2 0.45f
+#define TEMPO_COOLDOWN_PROJETIL_FASE1 0.40f
+#define TEMPO_COOLDOWN_PROJETIL_FASE2 0.30f
 #define TEMPO_AVISO_ATAQUE_INIMIGO 0.35f //Duração do aviso antes de o inimigo atacar (antes de ele atacar)
 #define QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS1 3 //A cada três ataques na fase dois 
 #define INTERVALO_RAJADA_BOSS 0.03f //Tempo de espera entre um tiro e o próximo configurado como rajada

@@ -15,6 +15,10 @@ int IndiceCenaFinal = 0; //Contador para marcar e contar as cenas que estão sen
 
 int IndiceCenaTransicaoBoss = 0;
 
+float opacidade_fade_final = 0.0f;
+
+int fazendo_fade_final = 0;
+
 const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marcar o começo de uma string)
     "No final, Rose acorda...",
     "E percebe que, no fim, tudo não passava de um 'sonho'.",
@@ -40,6 +44,7 @@ animacao boss2_idle;
 animacao boss2_attack;
 animacao boss2_special;
 animacao boss2_hurt;
+animacao boss2_dying;
 
 int animacao_atual_boss2 = 0;
 
@@ -93,12 +98,16 @@ void Boss2(){
     inimigo.vida = VIDA_MAX_INIMIGO_BOSS2;
     inimigo.posicao = (Vector2){640, COORDENADA_CHAO - 120};
 
+    opacidade_fade_final = 0.0f;
+    fazendo_fade_final = 0;
+
     animacao_atual_rose = 0;
     ReiniciarAnimacao(&rose_idle);
     ReiniciarAnimacao(&rose_walk);
     ReiniciarAnimacao(&rose_jump);
     ReiniciarAnimacao(&rose_parry);
     ReiniciarAnimacao(&rose_dying);
+    ReiniciarAnimacao(&rose_attack);
 
     projetil_inimigo.ativo = 0;
     projetil_inimigo.rebatido = 0;
@@ -120,6 +129,7 @@ void Boss2(){
     ReiniciarAnimacao(&boss2_attack);
     ReiniciarAnimacao(&boss2_special);
     ReiniciarAnimacao(&boss2_hurt);
+    ReiniciarAnimacao(&boss2_dying);
 }
 
 void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, int frames_totais, float intervalo, int repetindo){
@@ -154,6 +164,7 @@ void CarregarAssets() {
     LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 9, 0.08f, 0);
     LoadAnimacao(&boss2_special, "assets/boss2/special", "special", 9, 0.08f, 0);
     LoadAnimacao(&boss2_hurt, "assets/boss2/hurt", "hurt", 9, 0.08f, 0);
+    LoadAnimacao(&boss2_dying, "assets/boss2/dying", "death", 9, 0.10f, 0);
 
     LoadAnimacao(&rose_idle, "assets/rose/idle", "idle", 3, 0.18f, 1);
     LoadAnimacao(&rose_walk, "assets/rose/walk", "walk", 3, 0.12f, 1);
@@ -180,6 +191,7 @@ void DescarregarAssets() {
     UnloadAnimacao(&boss2_attack);
     UnloadAnimacao(&boss2_special);
     UnloadAnimacao(&boss2_hurt);
+    UnloadAnimacao(&boss2_dying);
 
     UnloadAnimacao(&rose_idle);
     UnloadAnimacao(&rose_walk);
@@ -279,6 +291,9 @@ void TrocarAnimacaoBoss2(int nova_animacao) {
     }
     else if (nova_animacao == 3) {
         ReiniciarAnimacao(&boss2_hurt);
+    }
+    else if (nova_animacao == 4) {
+        ReiniciarAnimacao(&boss2_dying);
     }
 }
 
@@ -409,6 +424,19 @@ void AtualizarJogo(){
             break;
 
          case tela_batalha_boss1:{
+
+            if (jogador.vida <= 0) {
+                jogador.vida = 0;
+
+                TrocarAnimacaoRose(4);
+                AtualizarAnimacao(&rose_dying);
+
+                if (rose_dying.terminou) {
+                    ModoDoJogo = tela_GameOver;
+                }
+
+                break;
+            }
 
             int rose_esta_andando = 0;
 
@@ -694,7 +722,7 @@ void AtualizarJogo(){
                     cooldown_projetil = INTERVALO_RAJADA_BOSS;
                 }
                 else if (distancia_horizontal_boss < 180){
-                    cooldown_projetil = tempo_cooldown_atual_projetil + 0.7f;
+                    cooldown_projetil = tempo_cooldown_atual_projetil + 0.5f;
                 }
                 else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
@@ -707,7 +735,7 @@ void AtualizarJogo(){
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
 
             else if (projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
-                jogador.vida -= 10;
+                jogador.vida -= 18;
                 tempo_sem_receber_dano = 1.0f;
                 tempo_recebendo_dano_jogador = 0.2f;
 
@@ -724,7 +752,7 @@ void AtualizarJogo(){
                     cooldown_projetil = INTERVALO_RAJADA_BOSS;
                 }
                 else if (distancia_horizontal_boss < 180){
-                    cooldown_projetil = tempo_cooldown_atual_projetil + 0.7f;
+                    cooldown_projetil = tempo_cooldown_atual_projetil + 0.6f;
                 }
                 else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
@@ -738,7 +766,11 @@ void AtualizarJogo(){
             //Inimigo perdeu ou Jogador perdeu
 
             if (jogador.vida <= 0){
-                ModoDoJogo = tela_GameOver;
+                jogador.vida = 0;
+                atacando = 0;
+                aparando = 0;
+                projetil_inimigo.ativo = 0;
+                TrocarAnimacaoRose(4);
             }
 
             else if (inimigo.vida <= 0){
@@ -791,6 +823,51 @@ void AtualizarJogo(){
             //Fim da batalha
 
         case tela_batalha_boss2:{
+            if (jogador.vida <= 0) {
+                jogador.vida = 0;
+
+                TrocarAnimacaoRose(4);
+                AtualizarAnimacao(&rose_dying);
+
+                if (rose_dying.terminou) {
+                    ModoDoJogo = tela_GameOver;
+                }
+
+                break;
+            }
+            if (inimigo.vida <= 0) {
+                inimigo.vida = 0;
+
+                atacando = 0;
+                aparando = 0;
+                projetil_inimigo.ativo = 0;
+                avisando_ataque_inimigo = 0;
+
+                if (animacao_atual_boss2 != 4) {
+                    TrocarAnimacaoBoss2(4);
+                }
+
+                if (!boss2_dying.terminou) {
+                    AtualizarAnimacao(&boss2_dying);
+                }
+                else {
+                    fazendo_fade_final = 1;
+                }
+
+                if (fazendo_fade_final) {
+                    opacidade_fade_final += GetFrameTime() / 1.5f;
+
+                    if (opacidade_fade_final >= 1.0f) {
+                        opacidade_fade_final = 0.0f;
+                        fazendo_fade_final = 0;
+
+                        IndiceCenaFinal = 0;
+                        ModoDoJogo = tela_animacaoFinal;
+                    }
+                }
+
+                break;
+            }
 
             int rose_esta_andando = 0;
 
@@ -1149,12 +1226,22 @@ void AtualizarJogo(){
             //Inimigo perdeu ou Jogador perdeu
 
             if (jogador.vida <= 0){
-                ModoDoJogo = tela_GameOver;
+                jogador.vida = 0;
+                atacando = 0;
+                aparando = 0;
+                projetil_inimigo.ativo = 0;
+                TrocarAnimacaoRose(4);
             }
 
             else if (inimigo.vida <= 0){
-                IndiceCenaFinal = 0;
-                ModoDoJogo = tela_animacaoFinal;
+                inimigo.vida = 0;
+
+                atacando = 0;
+                aparando = 0;
+                projetil_inimigo.ativo = 0;
+                avisando_ataque_inimigo = 0;
+
+                TrocarAnimacaoBoss2(4);
             }
             
             if (animacao_atual_rose == 1) {
@@ -1196,6 +1283,9 @@ void AtualizarJogo(){
                 if (boss2_hurt.terminou) {
                     animacao_atual_boss2 = 0;
                 }
+            }
+            else if (animacao_atual_boss2 == 4) {
+                AtualizarAnimacao(&boss2_dying);
             }
             else {
                 AtualizarAnimacao(&boss2_idle);
@@ -1346,10 +1436,10 @@ void DesenharJogo(){
             }
             else if (animacao_atual_rose == 4) { // dying
                 destinoRose = (Rectangle){
-                    jogador.posicao.x - 75,
-                    jogador.posicao.y - 125,
-                    150,
-                    170
+                    jogador.posicao.x - 110,
+                    jogador.posicao.y - 155,
+                    220,
+                    250
                 };
             }
             else { // idle
@@ -1562,10 +1652,10 @@ void DesenharJogo(){
             }
             else if (animacao_atual_rose == 4) { // dying
                 destinoRose = (Rectangle){
-                    jogador.posicao.x - 75,
-                    jogador.posicao.y - 125,
-                    150,
-                    170
+                    jogador.posicao.x - 110,
+                    jogador.posicao.y - 155,
+                    220,
+                    250
                 };
             }
             else { // idle
@@ -1600,6 +1690,9 @@ void DesenharJogo(){
             }
             else if (animacao_atual_boss2 == 3) {
                 animacaoBoss2 = &boss2_hurt;
+            }
+            else if (animacao_atual_boss2 == 4) {
+                animacaoBoss2 = &boss2_dying;
             }
 
             Texture2D frameBoss2 = animacaoBoss2->frames[animacaoBoss2->frame_atual];
@@ -1697,6 +1790,15 @@ void DesenharJogo(){
             DrawRectangleLines(50,160,300,20,WHITE);
 
             DrawText("Pressione A para atacar", 50,200,20,WHITE);
+            if (fazendo_fade_final) {
+                DrawRectangle(
+                    0,
+                    0,
+                    LARGURA_TELA,
+                    ALTURA_TELA,
+                    Fade(BLACK, opacidade_fade_final)
+                );
+            }
             break;
 
         }
