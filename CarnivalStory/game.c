@@ -26,6 +26,9 @@ const char *textos_transicao_boss[] = {
     "Entretanto, uma força maior se aproximava, mais forte, mais assutadora...",
     "'Será que sou capaz disso?...' pensou Rose."
 };
+// BACKGROUND //
+Texture2D background;
+
 // ANIMAÇÕES //
 animacao boss1_idle;
 animacao boss1_attack;
@@ -45,6 +48,7 @@ animacao rose_walk;
 animacao rose_jump;
 animacao rose_parry;
 animacao rose_dying;
+animacao rose_attack;
 
 int animacao_atual_rose = 0;
 
@@ -140,20 +144,24 @@ void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, i
 }
 
 void CarregarAssets() {
+    background = LoadTexture("assets/background/background.png");
+
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", FRAMES_ANIMACAO, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", FRAMES_ANIMACAO, 0.08f, 0);
     LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", FRAMES_ANIMACAO, 0.08f, 0);
 
     LoadAnimacao(&boss2_idle, "assets/boss2/idle", "idle", 9, 0.12f, 1);
-    LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 5, 0.10f, 0);
+    LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 9, 0.08f, 0);
     LoadAnimacao(&boss2_special, "assets/boss2/special", "special", 9, 0.08f, 0);
     LoadAnimacao(&boss2_hurt, "assets/boss2/hurt", "hurt", 9, 0.08f, 0);
 
     LoadAnimacao(&rose_idle, "assets/rose/idle", "idle", 3, 0.18f, 1);
     LoadAnimacao(&rose_walk, "assets/rose/walk", "walk", 3, 0.12f, 1);
     LoadAnimacao(&rose_jump, "assets/rose/jump", "jump", 5, 0.10f, 0);
-    LoadAnimacao(&rose_parry, "assets/rose/parry", "parry", 3, 0.06f, 0);
+    LoadAnimacao(&rose_parry, "assets/rose/parry", "parry", 3, 0.11f, 0);
     LoadAnimacao(&rose_dying, "assets/rose/dying", "dying", 9, 0.10f, 0);
+    LoadAnimacao(&rose_attack, "assets/rose/attack", "attack", 9, 0.06f, 0);
+    
 }
 
 
@@ -178,6 +186,9 @@ void DescarregarAssets() {
     UnloadAnimacao(&rose_jump);
     UnloadAnimacao(&rose_parry);
     UnloadAnimacao(&rose_dying);
+    UnloadAnimacao(&rose_attack);
+
+    UnloadTexture(background);
 }
 
 void AtualizarAnimacao(animacao *animacao) {
@@ -273,6 +284,16 @@ void TrocarAnimacaoBoss2(int nova_animacao) {
 
 void TrocarAnimacaoRose(int nova_animacao) {
 
+    
+    if (animacao_atual_rose == 5 && !rose_attack.terminou && nova_animacao != 4) {
+        return;
+    }
+
+  
+    if (animacao_atual_rose == 3 && !rose_parry.terminou && nova_animacao != 4 && nova_animacao != 5) {
+        return;
+    }
+
     if (animacao_atual_rose == nova_animacao) {
         return;
     }
@@ -294,6 +315,9 @@ void TrocarAnimacaoRose(int nova_animacao) {
     else if (nova_animacao == 4) {
         ReiniciarAnimacao(&rose_dying);
     }
+    else if (nova_animacao == 5) {
+        ReiniciarAnimacao(&rose_attack);
+    }
 }
 
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
@@ -313,6 +337,7 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     ReiniciarAnimacao(&rose_jump);
     ReiniciarAnimacao(&rose_parry);
     ReiniciarAnimacao(&rose_dying);
+    ReiniciarAnimacao(&rose_attack);
 
     ataque_jogador = (Rectangle){0,0,LARGURA_ATAQUE,ALTURA_ATAQUE};
     tempo_ataque = 0;
@@ -406,9 +431,10 @@ void AtualizarJogo(){
 
             //Se eu estou pressionando A e eu não estava atacando...
 
-            if (IsKeyPressed(KEY_A) && !atacando && tempo_incapacitado_jogador <= 0){
+            if (IsKeyPressed(KEY_A) && !atacando && !aparando && tempo_incapacitado_jogador <= 0){
                 atacando = 1;
                 tempo_ataque = TEMPO_ATAQUE;
+                TrocarAnimacaoRose(5);
 
                 ataque_jogador = (Rectangle){
                     jogador.posicao.x + 20,
@@ -509,10 +535,11 @@ void AtualizarJogo(){
 
             //Ativar parry com Q
 
-            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando){
+            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && !atacando){
                 aparando = 1;
                 tempo_parry = TEMPO_PARRY;
                 cooldown_parry = COOLDOWN_PARRY;
+                TrocarAnimacaoRose(3);
             }
 
             //Tempo ativo do parry
@@ -719,16 +746,27 @@ void AtualizarJogo(){
                 ModoDoJogo = tela_transicao_boss;
             }
             
+            
             if (animacao_atual_rose == 1) {
                 AtualizarAnimacao(&rose_walk);
             }
             else if (animacao_atual_rose == 2) {
                 AtualizarAnimacao(&rose_jump);
             }
+            else if (animacao_atual_rose == 3) {
+                AtualizarAnimacao(&rose_parry);
+            }
+            else if (animacao_atual_rose == 4) {
+                AtualizarAnimacao(&rose_dying);
+            }
+            else if (animacao_atual_rose == 5) {
+                AtualizarAnimacao(&rose_attack);
+            }
             else {
                 AtualizarAnimacao(&rose_idle);
             }
 
+            
             if (animacao_atual_boss1 == 1) {
                 AtualizarAnimacao(&boss1_attack);
 
@@ -781,9 +819,10 @@ void AtualizarJogo(){
 
             //Se eu estou pressionando A e eu não estava atacando...
 
-            if (IsKeyPressed(KEY_A) && !atacando && tempo_incapacitado_jogador <= 0){
+            if (IsKeyPressed(KEY_A) && !atacando && !aparando && tempo_incapacitado_jogador <= 0){
                 atacando = 1;
                 tempo_ataque = TEMPO_ATAQUE;
+                TrocarAnimacaoRose(5);
 
                 ataque_jogador = (Rectangle){
                     jogador.posicao.x + 20,
@@ -884,10 +923,11 @@ void AtualizarJogo(){
 
             //Ativar parry com Q
 
-            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && tempo_incapacitado_jogador <= 0){
+            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && !atacando && tempo_incapacitado_jogador <= 0){
                 aparando = 1;
                 tempo_parry = TEMPO_PARRY;
                 cooldown_parry = COOLDOWN_PARRY;
+                TrocarAnimacaoRose(3);
             }
 
             //Tempo ativo do parry
@@ -1123,6 +1163,15 @@ void AtualizarJogo(){
             else if (animacao_atual_rose == 2) {
                 AtualizarAnimacao(&rose_jump);
             }
+            else if (animacao_atual_rose == 3) {
+                AtualizarAnimacao(&rose_parry);
+            }
+            else if (animacao_atual_rose == 4) {
+                AtualizarAnimacao(&rose_dying);
+            }
+            else if (animacao_atual_rose == 5) {
+                AtualizarAnimacao(&rose_attack);
+            }
             else {
                 AtualizarAnimacao(&rose_idle);
             }
@@ -1218,7 +1267,14 @@ void DesenharJogo(){
             break;
 
         case tela_batalha_boss1:{
-
+            DrawTexturePro(
+                background,
+                (Rectangle){0, 0, background.width, background.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA + 55},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
             DrawText("LUTE!", 350,50,30,RED);
 
             Color corRose = WHITE;
@@ -1235,6 +1291,15 @@ void DesenharJogo(){
             else if (animacao_atual_rose == 2) {
                 animacaoRose = &rose_jump;
             }
+            else if (animacao_atual_rose == 3) {
+                animacaoRose = &rose_parry;
+            }
+            else if (animacao_atual_rose == 4) {
+                animacaoRose = &rose_dying;
+            }
+            else if (animacao_atual_rose == 5) {
+                animacaoRose = &rose_attack;
+            }
 
             Texture2D frameRose = animacaoRose->frames[animacaoRose->frame_atual];
 
@@ -1250,7 +1315,7 @@ void DesenharJogo(){
             if (animacao_atual_rose == 1) { // walk
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 55,
-                    jogador.posicao.y - 85,
+                    jogador.posicao.y - 105,
                     110,
                     130
                 };
@@ -1258,23 +1323,31 @@ void DesenharJogo(){
             else if (animacao_atual_rose == 2) { // jump
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 105,
-                    jogador.posicao.y - 140,
+                    jogador.posicao.y - 160,
                     215,
                     245
                 };
             }
-            else if (animacao_atual_rose == 3) { // parry, para quando implementarmos
+            else if (animacao_atual_rose == 3) { // parry
                 destinoRose = (Rectangle){
-                    jogador.posicao.x - 70,
-                    jogador.posicao.y - 100,
-                    140,
-                    160
+                    jogador.posicao.x - 55,
+                    jogador.posicao.y - 105,
+                    110,
+                    130
                 };
             }
-            else if (animacao_atual_rose == 4) { // dying, para quando implementarmos
+            else if (animacao_atual_rose == 5) { // attack
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+            else if (animacao_atual_rose == 4) { // dying
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 75,
-                    jogador.posicao.y - 105,
+                    jogador.posicao.y - 125,
                     150,
                     170
                 };
@@ -1282,7 +1355,7 @@ void DesenharJogo(){
             else { // idle
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 105,
-                    jogador.posicao.y - 140,
+                    jogador.posicao.y - 160,
                     215,
                     245
                 };
@@ -1328,7 +1401,7 @@ void DesenharJogo(){
 
             Rectangle destinoBoss = {
                 inimigo.posicao.x - 60,
-                inimigo.posicao.y - 90,
+                inimigo.posicao.y - 120,
                 240,
                 280
             };
@@ -1409,6 +1482,15 @@ void DesenharJogo(){
 
         case tela_batalha_boss2:{
 
+            DrawTexturePro(
+                background,
+                (Rectangle){0, 0, background.width, background.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA + 55},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+            
             DrawText("LUTE!", 350,50,30,RED);
 
             Color corRose = WHITE;
@@ -1425,6 +1507,15 @@ void DesenharJogo(){
             else if (animacao_atual_rose == 2) {
                 animacaoRose = &rose_jump;
             }
+            else if (animacao_atual_rose == 3) {
+                animacaoRose = &rose_parry;
+            }
+            else if (animacao_atual_rose == 4) {
+                animacaoRose = &rose_dying;
+            }
+            else if (animacao_atual_rose == 5) {
+                animacaoRose = &rose_attack;
+            }
 
             Texture2D frameRose = animacaoRose->frames[animacaoRose->frame_atual];
 
@@ -1440,7 +1531,7 @@ void DesenharJogo(){
             if (animacao_atual_rose == 1) { // walk
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 55,
-                    jogador.posicao.y - 85,
+                    jogador.posicao.y - 105,
                     110,
                     130
                 };
@@ -1448,23 +1539,31 @@ void DesenharJogo(){
             else if (animacao_atual_rose == 2) { // jump
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 105,
-                    jogador.posicao.y - 140,
+                    jogador.posicao.y - 160,
                     215,
                     245
                 };
             }
-            else if (animacao_atual_rose == 3) { // parry, para quando implementarmos
+            else if (animacao_atual_rose == 3) { // parry
                 destinoRose = (Rectangle){
-                    jogador.posicao.x - 70,
-                    jogador.posicao.y - 100,
-                    140,
-                    160
+                    jogador.posicao.x - 55,
+                    jogador.posicao.y - 105,
+                    110,
+                    130
                 };
             }
-            else if (animacao_atual_rose == 4) { // dying, para quando implementarmos
+            else if (animacao_atual_rose == 5) { // attack
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+            else if (animacao_atual_rose == 4) { // dying
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 75,
-                    jogador.posicao.y - 105,
+                    jogador.posicao.y - 125,
                     150,
                     170
                 };
@@ -1472,7 +1571,7 @@ void DesenharJogo(){
             else { // idle
                 destinoRose = (Rectangle){
                     jogador.posicao.x - 105,
-                    jogador.posicao.y - 140,
+                    jogador.posicao.y - 160,
                     215,
                     245
                 };

@@ -13,7 +13,7 @@
 
 #define LARGURA_TELA 800 //Largura da tela que vai ser aberta para jogar
 #define ALTURA_TELA 600 //Altura da tela que o jogo vai abrir
-#define COORDENADA_CHAO 500 //Coordenada que o personagem vai iniciar no jogo (em Raylib, o eixo Y começa do 0, no TOPO da tela e vai descendo para baixo, por isso que é 500, porque a tela é 600)
+#define COORDENADA_CHAO 450 //Coordenada que o personagem vai iniciar no jogo (em Raylib, o eixo Y começa do 0, no TOPO da tela e vai descendo para baixo, por isso que é 500, porque a tela é 600)
 #define INTENSIDADE_PULO -10.0f //Intensidade com que o jogador pula
 #define GRAVIDADE 0.5f //Gravidade definida (cair mais lento mais rápido...)
 #define TOTAL_CENAS_FINAIS 3 //Quantidade de cenas que serão exibidas no final, quando o jogo acabar)
