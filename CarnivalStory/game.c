@@ -26,7 +26,10 @@ const char *textos_transicao_boss[] = {
     "Entretanto, uma força maior se aproximava, mais forte, mais assutadora...",
     "'Será que sou capaz disso?...' pensou Rose."
 };
-// ANIMAÇÕES DE CHEFES
+// BACKGROUND //
+Texture2D background;
+
+// ANIMAÇÕES //
 animacao boss1_idle;
 animacao boss1_attack;
 animacao boss1_hurt;
@@ -39,6 +42,15 @@ animacao boss2_special;
 animacao boss2_hurt;
 
 int animacao_atual_boss2 = 0;
+
+animacao rose_idle;
+animacao rose_walk;
+animacao rose_jump;
+animacao rose_parry;
+animacao rose_dying;
+animacao rose_attack;
+
+int animacao_atual_rose = 0;
 
 
 Jogador jogador;
@@ -80,6 +92,13 @@ void Boss2(){
     jogador.posicao = (Vector2){200, COORDENADA_CHAO};
     inimigo.vida = VIDA_MAX_INIMIGO_BOSS2;
     inimigo.posicao = (Vector2){640, COORDENADA_CHAO - 120};
+
+    animacao_atual_rose = 0;
+    ReiniciarAnimacao(&rose_idle);
+    ReiniciarAnimacao(&rose_walk);
+    ReiniciarAnimacao(&rose_jump);
+    ReiniciarAnimacao(&rose_parry);
+    ReiniciarAnimacao(&rose_dying);
 
     projetil_inimigo.ativo = 0;
     projetil_inimigo.rebatido = 0;
@@ -125,14 +144,24 @@ void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, i
 }
 
 void CarregarAssets() {
+    background = LoadTexture("assets/background/background.png");
+
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", FRAMES_ANIMACAO, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", FRAMES_ANIMACAO, 0.08f, 0);
     LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", FRAMES_ANIMACAO, 0.08f, 0);
 
     LoadAnimacao(&boss2_idle, "assets/boss2/idle", "idle", 9, 0.12f, 1);
-    LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 5, 0.10f, 0);
+    LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 9, 0.08f, 0);
     LoadAnimacao(&boss2_special, "assets/boss2/special", "special", 9, 0.08f, 0);
     LoadAnimacao(&boss2_hurt, "assets/boss2/hurt", "hurt", 9, 0.08f, 0);
+
+    LoadAnimacao(&rose_idle, "assets/rose/idle", "idle", 3, 0.18f, 1);
+    LoadAnimacao(&rose_walk, "assets/rose/walk", "walk", 3, 0.12f, 1);
+    LoadAnimacao(&rose_jump, "assets/rose/jump", "jump", 5, 0.10f, 0);
+    LoadAnimacao(&rose_parry, "assets/rose/parry", "parry", 3, 0.11f, 0);
+    LoadAnimacao(&rose_dying, "assets/rose/dying", "dying", 9, 0.10f, 0);
+    LoadAnimacao(&rose_attack, "assets/rose/attack", "attack", 9, 0.06f, 0);
+    
 }
 
 
@@ -151,6 +180,15 @@ void DescarregarAssets() {
     UnloadAnimacao(&boss2_attack);
     UnloadAnimacao(&boss2_special);
     UnloadAnimacao(&boss2_hurt);
+
+    UnloadAnimacao(&rose_idle);
+    UnloadAnimacao(&rose_walk);
+    UnloadAnimacao(&rose_jump);
+    UnloadAnimacao(&rose_parry);
+    UnloadAnimacao(&rose_dying);
+    UnloadAnimacao(&rose_attack);
+
+    UnloadTexture(background);
 }
 
 void AtualizarAnimacao(animacao *animacao) {
@@ -244,6 +282,44 @@ void TrocarAnimacaoBoss2(int nova_animacao) {
     }
 }
 
+void TrocarAnimacaoRose(int nova_animacao) {
+
+    
+    if (animacao_atual_rose == 5 && !rose_attack.terminou && nova_animacao != 4) {
+        return;
+    }
+
+  
+    if (animacao_atual_rose == 3 && !rose_parry.terminou && nova_animacao != 4 && nova_animacao != 5) {
+        return;
+    }
+
+    if (animacao_atual_rose == nova_animacao) {
+        return;
+    }
+
+    animacao_atual_rose = nova_animacao;
+
+    if (nova_animacao == 0) {
+        ReiniciarAnimacao(&rose_idle);
+    }
+    else if (nova_animacao == 1) {
+        ReiniciarAnimacao(&rose_walk);
+    }
+    else if (nova_animacao == 2) {
+        ReiniciarAnimacao(&rose_jump);
+    }
+    else if (nova_animacao == 3) {
+        ReiniciarAnimacao(&rose_parry);
+    }
+    else if (nova_animacao == 4) {
+        ReiniciarAnimacao(&rose_dying);
+    }
+    else if (nova_animacao == 5) {
+        ReiniciarAnimacao(&rose_attack);
+    }
+}
+
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
 
     jogador.posicao = (Vector2){400, COORDENADA_CHAO}; //X = 400 (posição horizontal) e Y = COORDENADA_CHAO (começa no)
@@ -254,6 +330,14 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     jogador.vida = VIDA_MAX_JOGADOR;
     jogador.no_chao = 1;
     jogador.velocidade_pulo = 0;
+
+    animacao_atual_rose = 0;
+    ReiniciarAnimacao(&rose_idle);
+    ReiniciarAnimacao(&rose_walk);
+    ReiniciarAnimacao(&rose_jump);
+    ReiniciarAnimacao(&rose_parry);
+    ReiniciarAnimacao(&rose_dying);
+    ReiniciarAnimacao(&rose_attack);
 
     ataque_jogador = (Rectangle){0,0,LARGURA_ATAQUE,ALTURA_ATAQUE};
     tempo_ataque = 0;
@@ -326,8 +410,17 @@ void AtualizarJogo(){
 
          case tela_batalha_boss1:{
 
-            if (IsKeyDown(KEY_RIGHT)) jogador.posicao.x += 2;
-            if (IsKeyDown(KEY_LEFT)) jogador.posicao.x -= 2;
+            int rose_esta_andando = 0;
+
+            if (IsKeyDown(KEY_RIGHT)) {
+                jogador.posicao.x += 2;
+                rose_esta_andando = 1;
+            }
+
+            if (IsKeyDown(KEY_LEFT)) {
+                jogador.posicao.x -= 2;
+                rose_esta_andando = 1;
+            }
 
             //Limite o jogador dentro da tela
 
@@ -338,9 +431,10 @@ void AtualizarJogo(){
 
             //Se eu estou pressionando A e eu não estava atacando...
 
-            if (IsKeyPressed(KEY_A) && !atacando && tempo_incapacitado_jogador <= 0){
+            if (IsKeyPressed(KEY_A) && !atacando && !aparando && tempo_incapacitado_jogador <= 0){
                 atacando = 1;
                 tempo_ataque = TEMPO_ATAQUE;
+                TrocarAnimacaoRose(5);
 
                 ataque_jogador = (Rectangle){
                     jogador.posicao.x + 20,
@@ -380,7 +474,7 @@ void AtualizarJogo(){
 
                 //Se eu pressionar a tecla de espaço e o jogador estiver no chão,
                 //ele recebe velocidade para cima e não vai estar no chão, o famoso PULAAR
-
+                TrocarAnimacaoRose(2);
             }
             
             jogador.velocidade_pulo += GRAVIDADE; //A gravidade MUDA a velocidade vertical do jogador
@@ -398,6 +492,15 @@ void AtualizarJogo(){
                     jogador.velocidade_pulo = 0; //Não vai estar pulando, para a queda
                     jogador.no_chao = 1; //E a afirmação se torna verdadeira de que ele tá no chão, permitindo que ele pule de novo
                     
+            }
+            if (!jogador.no_chao) {
+                TrocarAnimacaoRose(2);
+            }
+            else if (rose_esta_andando) {
+                TrocarAnimacaoRose(1);
+            }
+            else {
+                TrocarAnimacaoRose(0);
             }
 
             //Cooldown do parry
@@ -432,10 +535,11 @@ void AtualizarJogo(){
 
             //Ativar parry com Q
 
-            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando){
+            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && !atacando){
                 aparando = 1;
                 tempo_parry = TEMPO_PARRY;
                 cooldown_parry = COOLDOWN_PARRY;
+                TrocarAnimacaoRose(3);
             }
 
             //Tempo ativo do parry
@@ -641,8 +745,28 @@ void AtualizarJogo(){
                 IndiceCenaTransicaoBoss = 0;
                 ModoDoJogo = tela_transicao_boss;
             }
+            
+            
+            if (animacao_atual_rose == 1) {
+                AtualizarAnimacao(&rose_walk);
+            }
+            else if (animacao_atual_rose == 2) {
+                AtualizarAnimacao(&rose_jump);
+            }
+            else if (animacao_atual_rose == 3) {
+                AtualizarAnimacao(&rose_parry);
+            }
+            else if (animacao_atual_rose == 4) {
+                AtualizarAnimacao(&rose_dying);
+            }
+            else if (animacao_atual_rose == 5) {
+                AtualizarAnimacao(&rose_attack);
+            }
+            else {
+                AtualizarAnimacao(&rose_idle);
+            }
 
-
+            
             if (animacao_atual_boss1 == 1) {
                 AtualizarAnimacao(&boss1_attack);
 
@@ -668,8 +792,17 @@ void AtualizarJogo(){
 
         case tela_batalha_boss2:{
 
-            if (IsKeyDown(KEY_RIGHT)) jogador.posicao.x += 2;
-            if (IsKeyDown(KEY_LEFT)) jogador.posicao.x -= 2;
+            int rose_esta_andando = 0;
+
+            if (IsKeyDown(KEY_RIGHT)) {
+                jogador.posicao.x += 2;
+                rose_esta_andando = 1;
+            }
+
+            if (IsKeyDown(KEY_LEFT)) {
+                jogador.posicao.x -= 2;
+                rose_esta_andando = 1;
+            }
 
             //Limite o jogador dentro da tela
 
@@ -686,9 +819,10 @@ void AtualizarJogo(){
 
             //Se eu estou pressionando A e eu não estava atacando...
 
-            if (IsKeyPressed(KEY_A) && !atacando && tempo_incapacitado_jogador <= 0){
+            if (IsKeyPressed(KEY_A) && !atacando && !aparando && tempo_incapacitado_jogador <= 0){
                 atacando = 1;
                 tempo_ataque = TEMPO_ATAQUE;
+                TrocarAnimacaoRose(5);
 
                 ataque_jogador = (Rectangle){
                     jogador.posicao.x + 20,
@@ -727,6 +861,7 @@ void AtualizarJogo(){
 
                 //Se eu pressionar a tecla de espaço e o jogador estiver no chão,
                 //ele recebe velocidade para cima e não vai estar no chão, o famoso PULAAR
+                TrocarAnimacaoRose(2);
 
             }
             
@@ -745,6 +880,15 @@ void AtualizarJogo(){
                     jogador.velocidade_pulo = 0; //Não vai estar pulando, para a queda
                     jogador.no_chao = 1; //E a afirmação se torna verdadeira de que ele tá no chão, permitindo que ele pule de novo
                     
+            }
+            if (!jogador.no_chao) {
+                TrocarAnimacaoRose(2);
+            }
+            else if (rose_esta_andando) {
+                TrocarAnimacaoRose(1);
+            }
+            else {
+                TrocarAnimacaoRose(0);
             }
 
             //Cooldown do parry
@@ -779,10 +923,11 @@ void AtualizarJogo(){
 
             //Ativar parry com Q
 
-            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && tempo_incapacitado_jogador <= 0){
+            if (IsKeyPressed(KEY_Q) && cooldown_parry <= 0 && !aparando && !atacando && tempo_incapacitado_jogador <= 0){
                 aparando = 1;
                 tempo_parry = TEMPO_PARRY;
                 cooldown_parry = COOLDOWN_PARRY;
+                TrocarAnimacaoRose(3);
             }
 
             //Tempo ativo do parry
@@ -1011,6 +1156,25 @@ void AtualizarJogo(){
                 IndiceCenaFinal = 0;
                 ModoDoJogo = tela_animacaoFinal;
             }
+            
+            if (animacao_atual_rose == 1) {
+                AtualizarAnimacao(&rose_walk);
+            }
+            else if (animacao_atual_rose == 2) {
+                AtualizarAnimacao(&rose_jump);
+            }
+            else if (animacao_atual_rose == 3) {
+                AtualizarAnimacao(&rose_parry);
+            }
+            else if (animacao_atual_rose == 4) {
+                AtualizarAnimacao(&rose_dying);
+            }
+            else if (animacao_atual_rose == 5) {
+                AtualizarAnimacao(&rose_attack);
+            }
+            else {
+                AtualizarAnimacao(&rose_idle);
+            }
 
             if (animacao_atual_boss2 == 1) {
                 AtualizarAnimacao(&boss2_attack);
@@ -1103,16 +1267,108 @@ void DesenharJogo(){
             break;
 
         case tela_batalha_boss1:{
-
+            DrawTexturePro(
+                background,
+                (Rectangle){0, 0, background.width, background.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA + 55},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
             DrawText("LUTE!", 350,50,30,RED);
 
-            Color corJogador = BLUE;
+            Color corRose = WHITE;
 
             if (tempo_recebendo_dano_jogador > 0){
-                corJogador = RED;
+                corRose = RED;
             }
 
-            DrawCircleV (jogador.posicao, 20, corJogador);
+            animacao *animacaoRose = &rose_idle;
+
+            if (animacao_atual_rose == 1) {
+                animacaoRose = &rose_walk;
+            }
+            else if (animacao_atual_rose == 2) {
+                animacaoRose = &rose_jump;
+            }
+            else if (animacao_atual_rose == 3) {
+                animacaoRose = &rose_parry;
+            }
+            else if (animacao_atual_rose == 4) {
+                animacaoRose = &rose_dying;
+            }
+            else if (animacao_atual_rose == 5) {
+                animacaoRose = &rose_attack;
+            }
+
+            Texture2D frameRose = animacaoRose->frames[animacaoRose->frame_atual];
+
+            Rectangle origemRose = {
+                frameRose.width,
+                0,
+                -frameRose.width,
+                frameRose.height
+            };
+
+            Rectangle destinoRose;
+
+            if (animacao_atual_rose == 1) { // walk
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 55,
+                    jogador.posicao.y - 105,
+                    110,
+                    130
+                };
+            }
+            else if (animacao_atual_rose == 2) { // jump
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+            else if (animacao_atual_rose == 3) { // parry
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 55,
+                    jogador.posicao.y - 105,
+                    110,
+                    130
+                };
+            }
+            else if (animacao_atual_rose == 5) { // attack
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+            else if (animacao_atual_rose == 4) { // dying
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 75,
+                    jogador.posicao.y - 125,
+                    150,
+                    170
+                };
+            }
+            else { // idle
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+
+            DrawTexturePro(
+                frameRose,
+                origemRose,
+                destinoRose,
+                (Vector2){0, 0},
+                0,
+                corRose
+            );
 
             if (atacando){
                 DrawRectangleLinesEx(ataque_jogador,2,PINK);
@@ -1145,7 +1401,7 @@ void DesenharJogo(){
 
             Rectangle destinoBoss = {
                 inimigo.posicao.x - 60,
-                inimigo.posicao.y - 90,
+                inimigo.posicao.y - 120,
                 240,
                 280
             };
@@ -1226,15 +1482,109 @@ void DesenharJogo(){
 
         case tela_batalha_boss2:{
 
+            DrawTexturePro(
+                background,
+                (Rectangle){0, 0, background.width, background.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA + 55},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+            
             DrawText("LUTE!", 350,50,30,RED);
 
-            Color corJogador = BLUE;
+            Color corRose = WHITE;
 
             if (tempo_recebendo_dano_jogador > 0){
-                corJogador = RED;
+                corRose = RED;
             }
 
-            DrawCircleV (jogador.posicao, 20, corJogador);
+            animacao *animacaoRose = &rose_idle;
+
+            if (animacao_atual_rose == 1) {
+                animacaoRose = &rose_walk;
+            }
+            else if (animacao_atual_rose == 2) {
+                animacaoRose = &rose_jump;
+            }
+            else if (animacao_atual_rose == 3) {
+                animacaoRose = &rose_parry;
+            }
+            else if (animacao_atual_rose == 4) {
+                animacaoRose = &rose_dying;
+            }
+            else if (animacao_atual_rose == 5) {
+                animacaoRose = &rose_attack;
+            }
+
+            Texture2D frameRose = animacaoRose->frames[animacaoRose->frame_atual];
+
+            Rectangle origemRose = {
+                frameRose.width,
+                0,
+                -frameRose.width,
+                frameRose.height
+            };
+
+            Rectangle destinoRose;
+
+            if (animacao_atual_rose == 1) { // walk
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 55,
+                    jogador.posicao.y - 105,
+                    110,
+                    130
+                };
+            }
+            else if (animacao_atual_rose == 2) { // jump
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+            else if (animacao_atual_rose == 3) { // parry
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 55,
+                    jogador.posicao.y - 105,
+                    110,
+                    130
+                };
+            }
+            else if (animacao_atual_rose == 5) { // attack
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+            else if (animacao_atual_rose == 4) { // dying
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 75,
+                    jogador.posicao.y - 125,
+                    150,
+                    170
+                };
+            }
+            else { // idle
+                destinoRose = (Rectangle){
+                    jogador.posicao.x - 105,
+                    jogador.posicao.y - 160,
+                    215,
+                    245
+                };
+            }
+
+            DrawTexturePro(
+                frameRose,
+                origemRose,
+                destinoRose,
+                (Vector2){0, 0},
+                0,
+                corRose
+            );
 
             if (atacando){
                 DrawRectangleLinesEx(ataque_jogador,2,PINK);
