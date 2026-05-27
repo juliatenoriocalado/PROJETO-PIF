@@ -43,6 +43,13 @@ Texture2D menu;
 Texture2D intro[5];
 int indice_tela_intro = 0;
 
+Music track_menu;
+Music track_boss1;
+Music track_boss2;
+Music track_gameover;
+
+int musica_atual = 0;
+
 // ANIMAÇÕES //
 animacao boss1_idle;
 animacao boss1_attack;
@@ -100,6 +107,8 @@ float tempo_texto_parry = 0; //Tempo em que o texto "APAROU!" é exibido
 //                                                                            Inicalização do jogo! 
 //==============================================================================================================================================================================================
 void ReiniciarAnimacao(animacao *animacao);
+void TrocarMusica(int nova_musica);
+void AtualizarMusicaJogo();
 void Boss2(){
 
     //Aqui a gente tá reiniciando tudo tudo tudo, porque se não fizermos isso o jogador vai chegar com a vida que sobrou do Boss 1, por exemplo, e outras configurações já ativadas que podem prejudicar o controle do jogador
@@ -174,12 +183,22 @@ void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, i
 void CarregarAssets() {
     background = LoadTexture("assets/background/background.png");
     gameover = LoadTexture("assets/gameover/gameover.jpeg");
-    menu = LoadTexture("assets/menu/menu.jpeg");
+    menu = LoadTexture("assets/menu/menu.jpeg");  
     intro[0] = LoadTexture("assets/intro/tela1.png");
     intro[1] = LoadTexture("assets/intro/tela2.jpeg");
     intro[2] = LoadTexture("assets/intro/tela3.jpeg");
     intro[3] = LoadTexture("assets/intro/tela4.jpeg");
     intro[4] = LoadTexture("assets/intro/tela5.jpeg");
+
+    track_menu = LoadMusicStream("assets/music/track_menu.ogg");
+    track_boss1 = LoadMusicStream("assets/music/track_boss1.ogg");
+    track_boss2 = LoadMusicStream("assets/music/track_boss2.ogg");
+    track_gameover = LoadMusicStream("assets/music/track_gameover.ogg");
+
+    track_menu.looping = true;
+    track_boss1.looping = true;
+    track_boss2.looping = true;
+    track_gameover.looping = true;
 
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", 9, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", 9, 0.08f, 0);
@@ -199,6 +218,7 @@ void CarregarAssets() {
     LoadAnimacao(&rose_dying, "assets/rose/dying", "dying", 9, 0.10f, 0);
     LoadAnimacao(&rose_attack, "assets/rose/attack", "attack", 9, 0.06f, 0);
     
+    TrocarMusica(1);
 }
 
 
@@ -232,6 +252,11 @@ void DescarregarAssets() {
     UnloadTexture(menu);
     for (int i = 0; i < 5; i++) {
     UnloadTexture(intro[i]);
+
+    UnloadMusicStream(track_menu);
+    UnloadMusicStream(track_boss1);
+    UnloadMusicStream(track_boss2);
+    UnloadMusicStream(track_gameover);
 }
 }
 
@@ -464,12 +489,63 @@ void AtualizarMorteRoseComLuz() {
 
     if (rose_dying.terminou && raio_luz_morte_rose <= 70.0f) {
         efeito_morte_rose = 0;
+        TrocarMusica(4);
         ModoDoJogo = tela_GameOver;
     }
 }
 
+void TrocarMusica(int nova_musica) {
+    if (musica_atual == nova_musica) {
+        return;
+    }
+
+    if (musica_atual == 1) {
+        StopMusicStream(track_menu);
+    }
+    else if (musica_atual == 2) {
+        StopMusicStream(track_boss1);
+    }
+    else if (musica_atual == 3) {
+        StopMusicStream(track_boss2);
+    }
+    else if (musica_atual == 4) {
+        StopMusicStream(track_gameover);
+    }
+
+    musica_atual = nova_musica;
+
+    if (musica_atual == 1) {
+        PlayMusicStream(track_menu);
+    }
+    else if (musica_atual == 2) {
+        PlayMusicStream(track_boss1);
+    }
+    else if (musica_atual == 3) {
+        PlayMusicStream(track_boss2);
+    }
+    else if (musica_atual == 4) {
+        PlayMusicStream(track_gameover);
+    }
+}
+
+void AtualizarMusicaJogo() {
+    if (musica_atual == 1) {
+        UpdateMusicStream(track_menu);
+    }
+    else if (musica_atual == 2) {
+        UpdateMusicStream(track_boss1);
+    }
+    else if (musica_atual == 3) {
+        UpdateMusicStream(track_boss2);
+    }
+    else if (musica_atual == 4) {
+        UpdateMusicStream(track_gameover);
+    }
+}
 
 void AtualizarJogo(){
+    
+    AtualizarMusicaJogo();
 
     switch (ModoDoJogo){
 
@@ -488,6 +564,7 @@ void AtualizarJogo(){
                 }
                 else {
                     InitGame();
+                    TrocarMusica(2);
                     ModoDoJogo = tela_batalha_boss1;
                 }
             }
@@ -1386,6 +1463,7 @@ void AtualizarJogo(){
         case tela_GameOver:
             if (IsKeyPressed(KEY_ENTER)){
                 InitGame();
+                TrocarMusica(1);
                 ModoDoJogo = tela_menu;
             }
 
@@ -1398,6 +1476,7 @@ void AtualizarJogo(){
 
                 if (IndiceCenaFinal >= TOTAL_CENAS_FINAIS){
                     InitGame();
+                    TrocarMusica(1);
                     IndiceCenaFinal = 0; //Vai começar no indice zero
                     ModoDoJogo = tela_menu;
 
@@ -1415,6 +1494,7 @@ void AtualizarJogo(){
 
             if (IndiceCenaTransicaoBoss >= TOTAL_CENAS_TRANSICAO_BOSS){
                 Boss2();
+                TrocarMusica(3);
                 ModoDoJogo = tela_intro_boss2;
             }
 
