@@ -10,6 +10,7 @@
 int main(){
 
     InitWindow(LARGURA_TELA,ALTURA_TELA,"Carnival Story");
+    InitAudioDevice();
     SetTargetFPS(60); //Função da Raylib que define os frames por segundo (FPS), sem isso, o while poderia rodar rápido demais (dependendo do pc), o que poderia prejudicar o desempenho do computador (se for alto demais).
     CarregarAssets(); //Carrega e prepara as imagens que vamos atualizar em várias structs;
     InitGame(); //Marca o início do jogo
@@ -32,6 +33,7 @@ int main(){
     }
     
     DescarregarAssets(); //Tira as animações da memória - Rafa
+    CloseAudioDevice();
     CloseWindow(); //Após executar o looping eu fecho a janela
     return 0; //O programa terminou com sucesso
 
