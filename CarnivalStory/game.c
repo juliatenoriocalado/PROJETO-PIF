@@ -2,6 +2,7 @@
 
 #include "game.h"
 #include <stdio.h>
+#include <math.h>
 
 //==============================================
 //             Variáveis globais
@@ -16,8 +17,13 @@ int IndiceCenaFinal = 0; //Contador para marcar e contar as cenas que estão sen
 int IndiceCenaTransicaoBoss = 0;
 
 float opacidade_fade_final = 0.0f;
-
 int fazendo_fade_final = 0;
+
+float opacidade_fade_intro_boss2 = 1.0f;
+float tempo_intro_boss2 = 0.0f;
+
+int efeito_morte_rose = 0;
+float raio_luz_morte_rose = 700.0f;
 
 const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marcar o começo de uma string)
     "No final, Rose acorda...",
@@ -32,6 +38,10 @@ const char *textos_transicao_boss[] = {
 };
 // BACKGROUND //
 Texture2D background;
+Texture2D gameover;
+Texture2D menu;
+Texture2D intro[5];
+int indice_tela_intro = 0;
 
 // ANIMAÇÕES //
 animacao boss1_idle;
@@ -45,6 +55,7 @@ animacao boss2_attack;
 animacao boss2_special;
 animacao boss2_hurt;
 animacao boss2_dying;
+animacao boss2_intro;
 
 int animacao_atual_boss2 = 0;
 
@@ -93,6 +104,9 @@ void Boss2(){
 
     //Aqui a gente tá reiniciando tudo tudo tudo, porque se não fizermos isso o jogador vai chegar com a vida que sobrou do Boss 1, por exemplo, e outras configurações já ativadas que podem prejudicar o controle do jogador
 
+    efeito_morte_rose = 0;
+    raio_luz_morte_rose = 700.0f;
+
     jogador.vida = VIDA_MAX_JOGADOR;
     jogador.posicao = (Vector2){200, COORDENADA_CHAO};
     inimigo.vida = VIDA_MAX_INIMIGO_BOSS2;
@@ -100,6 +114,9 @@ void Boss2(){
 
     opacidade_fade_final = 0.0f;
     fazendo_fade_final = 0;
+
+    opacidade_fade_intro_boss2 = 1.0f;
+    tempo_intro_boss2 = 0.0f;
 
     animacao_atual_rose = 0;
     ReiniciarAnimacao(&rose_idle);
@@ -130,6 +147,7 @@ void Boss2(){
     ReiniciarAnimacao(&boss2_special);
     ReiniciarAnimacao(&boss2_hurt);
     ReiniciarAnimacao(&boss2_dying);
+    ReiniciarAnimacao(&boss2_intro);
 }
 
 void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, int frames_totais, float intervalo, int repetindo){
@@ -155,16 +173,24 @@ void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, i
 
 void CarregarAssets() {
     background = LoadTexture("assets/background/background.png");
+    gameover = LoadTexture("assets/gameover/gameover.jpeg");
+    menu = LoadTexture("assets/menu/menu.jpeg");
+    intro[0] = LoadTexture("assets/intro/tela1.png");
+    intro[1] = LoadTexture("assets/intro/tela2.jpeg");
+    intro[2] = LoadTexture("assets/intro/tela3.jpeg");
+    intro[3] = LoadTexture("assets/intro/tela4.jpeg");
+    intro[4] = LoadTexture("assets/intro/tela5.jpeg");
 
-    LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", FRAMES_ANIMACAO, 0.12f, 1);
-    LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", FRAMES_ANIMACAO, 0.08f, 0);
-    LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", FRAMES_ANIMACAO, 0.08f, 0);
+    LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", 9, 0.12f, 1);
+    LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", 9, 0.08f, 0);
+    LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", 9, 0.08f, 0);
 
-    LoadAnimacao(&boss2_idle, "assets/boss2/idle", "idle", 9, 0.12f, 1);
+    LoadAnimacao(&boss2_idle, "assets/boss2/idle", "idle", 4, 0.12f, 1);
     LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 9, 0.08f, 0);
     LoadAnimacao(&boss2_special, "assets/boss2/special", "special", 9, 0.08f, 0);
     LoadAnimacao(&boss2_hurt, "assets/boss2/hurt", "hurt", 9, 0.08f, 0);
     LoadAnimacao(&boss2_dying, "assets/boss2/dying", "death", 9, 0.10f, 0);
+    LoadAnimacao(&boss2_intro, "assets/boss2/intro", "intro", 24, 0.08f, 0);
 
     LoadAnimacao(&rose_idle, "assets/rose/idle", "idle", 3, 0.18f, 1);
     LoadAnimacao(&rose_walk, "assets/rose/walk", "walk", 3, 0.12f, 1);
@@ -192,6 +218,7 @@ void DescarregarAssets() {
     UnloadAnimacao(&boss2_special);
     UnloadAnimacao(&boss2_hurt);
     UnloadAnimacao(&boss2_dying);
+    UnloadAnimacao(&boss2_intro);
 
     UnloadAnimacao(&rose_idle);
     UnloadAnimacao(&rose_walk);
@@ -201,6 +228,11 @@ void DescarregarAssets() {
     UnloadAnimacao(&rose_attack);
 
     UnloadTexture(background);
+    UnloadTexture(gameover);
+    UnloadTexture(menu);
+    for (int i = 0; i < 5; i++) {
+    UnloadTexture(intro[i]);
+}
 }
 
 void AtualizarAnimacao(animacao *animacao) {
@@ -337,6 +369,9 @@ void TrocarAnimacaoRose(int nova_animacao) {
 
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
 
+    efeito_morte_rose = 0;
+    raio_luz_morte_rose = 700.0f;
+
     jogador.posicao = (Vector2){400, COORDENADA_CHAO}; //X = 400 (posição horizontal) e Y = COORDENADA_CHAO (começa no)
     inimigo.posicao = (Vector2){650, COORDENADA_CHAO - 100};
 
@@ -405,20 +440,56 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
 
 //Define vida, posição e movimentos do personagem e do inimigo básicos
 
+void AtualizarMorteRoseComLuz() {
+    jogador.vida = 0;
+
+    atacando = 0;
+    aparando = 0;
+    projetil_inimigo.ativo = 0;
+    avisando_ataque_inimigo = 0;
+
+    if (!efeito_morte_rose) {
+        efeito_morte_rose = 1;
+        raio_luz_morte_rose = 700.0f;
+    }
+
+    TrocarAnimacaoRose(4);
+    AtualizarAnimacao(&rose_dying);
+
+    raio_luz_morte_rose -= GetFrameTime() * 260.0f;
+
+    if (raio_luz_morte_rose < 65.0f) {
+        raio_luz_morte_rose = 65.0f;
+    }
+
+    if (rose_dying.terminou && raio_luz_morte_rose <= 70.0f) {
+        efeito_morte_rose = 0;
+        ModoDoJogo = tela_GameOver;
+    }
+}
+
+
 void AtualizarJogo(){
 
     switch (ModoDoJogo){
 
         case tela_menu:
             if (IsKeyPressed(KEY_ENTER)){
+                indice_tela_intro = 0;
                 ModoDoJogo = tela_animacaoIntro;
             }
-            
+
             break;
 
         case tela_animacaoIntro:
             if (IsKeyPressed(KEY_ENTER)){
-                ModoDoJogo = tela_batalha_boss1;
+                if (indice_tela_intro < 4){
+                    indice_tela_intro++;
+                }
+                else {
+                    InitGame();
+                    ModoDoJogo = tela_batalha_boss1;
+                }
             }
 
             break;
@@ -426,15 +497,7 @@ void AtualizarJogo(){
          case tela_batalha_boss1:{
 
             if (jogador.vida <= 0) {
-                jogador.vida = 0;
-
-                TrocarAnimacaoRose(4);
-                AtualizarAnimacao(&rose_dying);
-
-                if (rose_dying.terminou) {
-                    ModoDoJogo = tela_GameOver;
-                }
-
+                AtualizarMorteRoseComLuz();
                 break;
             }
 
@@ -821,20 +884,42 @@ void AtualizarJogo(){
          }
 
             //Fim da batalha
+        case tela_intro_boss2:{
+
+            AtualizarAnimacao(&rose_idle);
+            AtualizarAnimacao(&boss2_intro);
+
+            tempo_intro_boss2 += GetFrameTime();
+
+            if (opacidade_fade_intro_boss2 > 0.0f) {
+                opacidade_fade_intro_boss2 -= GetFrameTime() / 1.2f;
+
+                if (opacidade_fade_intro_boss2 < 0.0f) {
+                    opacidade_fade_intro_boss2 = 0.0f;
+                }
+            }
+            
+            if ((boss2_intro.terminou && opacidade_fade_intro_boss2 <= 0.0f) || IsKeyPressed(KEY_ENTER)) {
+                opacidade_fade_intro_boss2 = 0.0f;
+                tempo_intro_boss2 = 0.0f;
+
+                cooldown_projetil = TEMPO_COOLDOWN_BOSS2_FASE1;
+
+                ModoDoJogo = tela_batalha_boss2;
+            }
+
+            break;
+        }
+
+
 
         case tela_batalha_boss2:{
+            
             if (jogador.vida <= 0) {
-                jogador.vida = 0;
-
-                TrocarAnimacaoRose(4);
-                AtualizarAnimacao(&rose_dying);
-
-                if (rose_dying.terminou) {
-                    ModoDoJogo = tela_GameOver;
-                }
-
+                AtualizarMorteRoseComLuz();
                 break;
             }
+
             if (inimigo.vida <= 0) {
                 inimigo.vida = 0;
 
@@ -909,10 +994,10 @@ void AtualizarJogo(){
                 };
 
                 Rectangle corpo_inimigo = {
-                    inimigo.posicao.x,
-                    inimigo.posicao.y,
-                    80,
-                    100
+                    inimigo.posicao.x - 90,
+                    inimigo.posicao.y + 20,
+                    120,
+                    180
                 };
 
                 if (CheckCollisionRecs(ataque_jogador, corpo_inimigo)){
@@ -1321,7 +1406,7 @@ void AtualizarJogo(){
             }
 
             break;
-            
+         
         case tela_transicao_boss:
 
             if (IsKeyPressed(KEY_ENTER)){
@@ -1330,7 +1415,7 @@ void AtualizarJogo(){
 
             if (IndiceCenaTransicaoBoss >= TOTAL_CENAS_TRANSICAO_BOSS){
                 Boss2();
-                ModoDoJogo = tela_batalha_boss2;
+                ModoDoJogo = tela_intro_boss2;
             }
 
             break;
@@ -1338,22 +1423,102 @@ void AtualizarJogo(){
     }
 
 }
+void DesenharLuzMorteRose(Vector2 centro, float raio) {
+    Color escuro = Fade(BLACK, 0.96f);
+    Color borda = Fade(BLACK, 0.55f);
 
+    float suavidade = 55.0f;
+    float raio_interno = raio - suavidade;
+
+    if (raio_interno < 0) {
+        raio_interno = 0;
+    }
+
+    float passo = 3.0f;
+
+    for (float y = 0; y < ALTURA_TELA; y += passo) {
+        float centro_y_linha = y + passo / 2.0f;
+        float dy = centro_y_linha - centro.y;
+
+        if (dy < -raio || dy > raio) {
+            DrawRectangleRec(
+                (Rectangle){0, y, LARGURA_TELA, passo},
+                escuro
+            );
+        }
+        else {
+            float dx_externo = sqrtf(raio * raio - dy * dy);
+
+            float esquerda_externa = centro.x - dx_externo;
+            float direita_externa = centro.x + dx_externo;
+
+            if (esquerda_externa > 0) {
+                DrawRectangleRec(
+                    (Rectangle){0, y, esquerda_externa, passo},
+                    escuro
+                );
+            }
+
+            if (direita_externa < LARGURA_TELA) {
+                DrawRectangleRec(
+                    (Rectangle){direita_externa, y, LARGURA_TELA - direita_externa, passo},
+                    escuro
+                );
+            }
+
+            if (raio_interno > 0 && dy >= -raio_interno && dy <= raio_interno) {
+                float dx_interno = sqrtf(raio_interno * raio_interno - dy * dy);
+
+                float esquerda_interna = centro.x - dx_interno;
+                float direita_interna = centro.x + dx_interno;
+
+                if (esquerda_interna > esquerda_externa) {
+                    DrawRectangleRec(
+                        (Rectangle){esquerda_externa, y, esquerda_interna - esquerda_externa, passo},
+                        borda
+                    );
+                }
+
+                if (direita_externa > direita_interna) {
+                    DrawRectangleRec(
+                        (Rectangle){direita_interna, y, direita_externa - direita_interna, passo},
+                        borda
+                    );
+                }
+            }
+        }
+    }
+}
 void DesenharJogo(){
 
     switch (ModoDoJogo){
         case tela_menu:
-            DrawText("PRESSIONE ENTER PARA COMEÇAR", 180,300,20,WHITE);
+            DrawTexturePro(
+                menu,
+                (Rectangle){0, 0, menu.width, menu.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+
             break;
 
         case tela_animacaoIntro:
-            DrawText("CARNIVAL STORY", 250,80,40, RED);
+            DrawTexturePro(
+                intro[indice_tela_intro],
+                (Rectangle){
+                    0,
+                    0,
+                    intro[indice_tela_intro].width,
+                    intro[indice_tela_intro].height
+                },
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
 
-            DrawRectangle(80,140,640,280,BLACK);
-            DrawRectangleLines(80,140,640,280,WHITE);
-
-            DrawText("Rose é uma menina gentil, cheia de sonhos...", 110,450,20,WHITE);
-            DrawText("ENTER", 180,520,20,GRAY); //Para iniciar a batalha
             break;
 
         case tela_batalha_boss1:{
@@ -1490,8 +1655,8 @@ void DesenharJogo(){
             };
 
             Rectangle destinoBoss = {
-                inimigo.posicao.x - 60,
-                inimigo.posicao.y - 120,
+                inimigo.posicao.x - 75,
+                inimigo.posicao.y - 135,
                 240,
                 280
             };
@@ -1515,14 +1680,6 @@ void DesenharJogo(){
                     destinoBoss.x + 20,
                     destinoBoss.y + 25,
                     80,
-                    YELLOW
-                );
-
-                DrawRectangleLines(
-                    destinoBoss.x,
-                    destinoBoss.y,
-                    destinoBoss.width,
-                    destinoBoss.height,
                     YELLOW
                 );
             }
@@ -1566,8 +1723,96 @@ void DesenharJogo(){
             DrawRectangleLines(50,160,300,20,WHITE);
 
             DrawText("Pressione A para atacar", 50,200,20,WHITE);
+            
+            if (efeito_morte_rose) {
+                Vector2 centro_luz_rose = {
+                jogador.posicao.x + 10,
+                jogador.posicao.y - 25
+            };
+
+            DesenharLuzMorteRose(centro_luz_rose, raio_luz_morte_rose);
+            }
+
             break;
 
+        }
+        
+        case tela_intro_boss2:{
+
+            DrawTexturePro(
+                background,
+                (Rectangle){0, 0, background.width, background.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA + 55},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+
+            Texture2D frameRose = rose_idle.frames[rose_idle.frame_atual];
+
+            Rectangle origemRose = {
+                frameRose.width,
+                0,
+                -frameRose.width,
+                frameRose.height
+            };
+
+            Rectangle destinoRose = {
+                jogador.posicao.x - 105,
+                jogador.posicao.y - 160,
+                215,
+                245
+            };
+
+            DrawTexturePro(
+                frameRose,
+                origemRose,
+                destinoRose,
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+
+            Texture2D frameBoss2 = boss2_intro.frames[boss2_intro.frame_atual];
+
+            Rectangle origemBoss2 = {
+                0,
+                0,
+                frameBoss2.width,
+                frameBoss2.height
+            };
+
+            Rectangle destinoBoss2 = {
+                inimigo.posicao.x - 215,
+                inimigo.posicao.y - 220,
+                420,
+                500
+            };
+
+            DrawTexturePro(
+                frameBoss2,
+                origemBoss2,
+                destinoBoss2,
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+
+            DrawText("A MARIONETE", 255, 70, 40, RED);
+
+            if (tempo_intro_boss2 > 1.2f) {
+                DrawText("Prepare-se...", 315, 120, 20, WHITE);
+            }
+
+            DrawRectangle(
+                0,
+                0,
+                LARGURA_TELA,
+                ALTURA_TELA,
+                Fade(BLACK, opacidade_fade_intro_boss2)
+            );
+
+            break;
         }
 
         case tela_batalha_boss2:{
@@ -1705,10 +1950,10 @@ void DesenharJogo(){
             };
 
             Rectangle destinoBoss2 = {
-                inimigo.posicao.x - 70,
-                inimigo.posicao.y - 100,
-                250,
-                300
+                inimigo.posicao.x - 215,
+                inimigo.posicao.y - 220,
+                420,
+                500
             };
 
             DrawTexturePro(
@@ -1727,17 +1972,9 @@ void DesenharJogo(){
             if (avisando_ataque_inimigo){
                 DrawText(
                     "!",
-                    destinoBoss2.x + 20,
-                    destinoBoss2.y + 35,
+                    destinoBoss2.x + 95,
+                    destinoBoss2.y + 75,
                     80,
-                    YELLOW
-                );
-
-                DrawRectangleLines(
-                    destinoBoss2.x,
-                    destinoBoss2.y,
-                    destinoBoss2.width,
-                    destinoBoss2.height,
                     YELLOW
                 );
             }
@@ -1790,6 +2027,16 @@ void DesenharJogo(){
             DrawRectangleLines(50,160,300,20,WHITE);
 
             DrawText("Pressione A para atacar", 50,200,20,WHITE);
+
+            if (efeito_morte_rose) {
+                Vector2 centro_luz_rose = {
+                    jogador.posicao.x + 10,
+                    jogador.posicao.y - 25
+                };
+
+                DesenharLuzMorteRose(centro_luz_rose, raio_luz_morte_rose);
+            }
+
             if (fazendo_fade_final) {
                 DrawRectangle(
                     0,
@@ -1799,9 +2046,9 @@ void DesenharJogo(){
                     Fade(BLACK, opacidade_fade_final)
                 );
             }
+
             break;
 
-        }
 
         case tela_transicao_boss:{
 
@@ -1834,10 +2081,19 @@ void DesenharJogo(){
             break;
 
         case tela_GameOver:
-            DrawText("VOCÊ PERDEU",260,250,60,RED);
-            DrawText("Pressione ENTER para tentar novamente",160,330,20,WHITE);
+            DrawTexturePro(
+            gameover,
+            (Rectangle){0, 0, gameover.width, gameover.height},
+            (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
+            (Vector2){0, 0},
+            0,
+            WHITE
+        );
+
+        DrawText("Pressione ENTER para tentar novamente", 190, 540, 20, WHITE);
 
             break;
+        }
 
     }
 

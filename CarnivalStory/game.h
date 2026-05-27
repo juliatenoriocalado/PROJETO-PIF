@@ -52,7 +52,7 @@
 #define QUANTIDADE_DE_ATAQUES_PARA_RAJADA_BOSS2_FASE2 2
 #define TIROS_EXTRAS_RAJADA_BOSS2_FASE1 1
 #define TIROS_EXTRAS_RAJADA_BOSS2_FASE2 2
-#define FRAMES_ANIMACAO 9
+#define FRAMES_ANIMACAO 24
 
 
 
@@ -60,11 +60,12 @@
 // Definição de modos de jogo e telas
 // =============================================
 
-typedef enum { //Controlar que tela está ativa
+typedef enum {
     tela_menu,
     tela_animacaoIntro,
     tela_batalha_boss1,
     tela_transicao_boss,
+    tela_intro_boss2,
     tela_batalha_boss2,
     tela_animacaoFinal,
     tela_GameOver
