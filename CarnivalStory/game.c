@@ -195,20 +195,20 @@ void CriarMatrizDanoParry() {
         }
     }
 
-    matriz_dano_parry[0][0] = 20;
-    matriz_dano_parry[0][1] = 23;
-    matriz_dano_parry[0][2] = 26;
-    matriz_dano_parry[0][3] = 29;
+    matriz_dano_parry[0][0] = 10;
+    matriz_dano_parry[0][1] = 13;
+    matriz_dano_parry[0][2] = 16;
+    matriz_dano_parry[0][3] = 19;
 
-    matriz_dano_parry[1][0] = 30;
-    matriz_dano_parry[1][1] = 33;
-    matriz_dano_parry[1][2] = 36;
-    matriz_dano_parry[1][3] = 39;
+    matriz_dano_parry[1][0] = 20;
+    matriz_dano_parry[1][1] = 23;
+    matriz_dano_parry[1][2] = 26;
+    matriz_dano_parry[1][3] = 29;
 
-    matriz_dano_parry[2][0] = 40;
-    matriz_dano_parry[2][1] = 43;
-    matriz_dano_parry[2][2] = 46;
-    matriz_dano_parry[2][3] = 49;
+    matriz_dano_parry[2][0] = 30;
+    matriz_dano_parry[2][1] = 33;
+    matriz_dano_parry[2][2] = 36;
+    matriz_dano_parry[2][3] = 39;
 }
 
 void LiberarMatrizDanoParry() {
@@ -327,13 +327,13 @@ void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, i
 
 void CarregarAssets() {
     background = LoadTexture("assets/background/background.png");
-    gameover = LoadTexture("assets/gameover/gameover.jpeg");
-    menu = LoadTexture("assets/menu/menu.jpeg");  
+    gameover = LoadTexture("assets/gameover/gameover.png");
+    menu = LoadTexture("assets/menu/menu.png");  
     intro[0] = LoadTexture("assets/intro/tela1.png");
-    intro[1] = LoadTexture("assets/intro/tela2.jpeg");
-    intro[2] = LoadTexture("assets/intro/tela3.jpeg");
-    intro[3] = LoadTexture("assets/intro/tela4.jpeg");
-    intro[4] = LoadTexture("assets/intro/tela5.jpeg");
+    intro[1] = LoadTexture("assets/intro/tela2.png");
+    intro[2] = LoadTexture("assets/intro/tela3.png");
+    intro[3] = LoadTexture("assets/intro/tela4.png");
+    intro[4] = LoadTexture("assets/intro/tela5.png");
 
     transicao_boss[0] = LoadTexture("assets/transicao/transicao1.png");
     transicao_boss[1] = LoadTexture("assets/transicao/transicao2.png");
