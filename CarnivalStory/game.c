@@ -3,6 +3,7 @@
 #include "game.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 //==============================================
 //             Variáveis globais
@@ -28,6 +29,14 @@ float tempo_intro_boss2 = 0.0f;
 
 int efeito_morte_rose = 0;
 float raio_luz_morte_rose = 700.0f;
+
+int qtd_linhas_combo_parry = 3;
+int qtd_colunas_combo_parry = 4;
+
+int **matriz_dano_parry = NULL;
+
+int linha_combo_parry = 0;
+int coluna_combo_parry = 0;
 
 const char *textos_final[] = { //Vetor de textos //Ponteiro para caractere (marcar o começo de uma string)
     "No final, Rose acorda...",
@@ -98,7 +107,7 @@ int aparando = 0; //Se o jogador está aparando
 float tempo_incapacitado_jogador = 0; //Tempo em que a Rose fica sem poder atacar nem aparar
 
 Inimigo inimigo;
-Projetil_Inimigo projetil_inimigo;
+Projetil *head = NULL;
 int avisando_ataque_inimigo = 0; //Confirma se o Boss está atacando (Sim ou não = 1 ou 0), por isso é do tipo int
 float tempo_aviso_ataque_inimigo = 0; //Por quanto tempo avisa que o Boss vai atacar, por isso float, segundos
 float tempo_recebendo_dano_inimigo = 0; //Tempo, por isso float, que marca o EFEITO VISUAL do inimigo recebendo dano
@@ -112,6 +121,129 @@ int proximo_projetil_especial = 0; //Marca se o próximo projétil será normal 
 float tempo_parry; //Quanto tempo para o parry dura
 float cooldown_parry = 0; //Quanto tempo para o parry poder ser usado de novo
 float tempo_texto_parry = 0; //Tempo em que o texto "APAROU!" é exibido
+
+Projetil *AdicionarProjetil(Projetil *head, Projetil_Inimigo dados) {
+    Projetil *novo = malloc(sizeof(Projetil));
+
+    if (novo == NULL) {
+        printf("Erro ao alocar memoria para projetil.\n");
+        return head;
+    }
+
+    novo->dados = dados;
+    novo->next = NULL;
+
+    if (head == NULL) {
+        return novo;
+    }
+
+    Projetil *temp = head;
+
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+
+    temp->next = novo;
+
+    return head;
+}
+
+void LimparProjeteis(Projetil **head) {
+    Projetil *temp = *head;
+
+    while (temp != NULL) {
+        Projetil *remover = temp;
+        temp = temp->next;
+        free(remover);
+    }
+
+    *head = NULL;
+}
+
+Projetil_Inimigo *PegarProjetilAtual(Projetil *head) {
+    if (head == NULL) {
+        return NULL;
+    }
+
+    return &head->dados;
+}
+void CriarMatrizDanoParry() {
+    if (matriz_dano_parry != NULL) {
+        return;
+    }
+
+    matriz_dano_parry = malloc(qtd_linhas_combo_parry * sizeof(int *));
+
+    if (matriz_dano_parry == NULL) {
+        printf("Erro ao alocar linhas da matriz de dano do parry.\n");
+        return;
+    }
+
+    for (int i = 0; i < qtd_linhas_combo_parry; i++) {
+        *(matriz_dano_parry + i) = malloc(qtd_colunas_combo_parry * sizeof(int));
+
+        if (*(matriz_dano_parry + i) == NULL) {
+            printf("Erro ao alocar colunas da matriz de dano do parry.\n");
+
+            for (int j = 0; j < i; j++) {
+                free(*(matriz_dano_parry + j));
+            }
+
+            free(matriz_dano_parry);
+            matriz_dano_parry = NULL;
+            return;
+        }
+    }
+
+    matriz_dano_parry[0][0] = 10;
+    matriz_dano_parry[0][1] = 13;
+    matriz_dano_parry[0][2] = 16;
+    matriz_dano_parry[0][3] = 19;
+
+    matriz_dano_parry[1][0] = 20;
+    matriz_dano_parry[1][1] = 23;
+    matriz_dano_parry[1][2] = 26;
+    matriz_dano_parry[1][3] = 29;
+
+    matriz_dano_parry[2][0] = 30;
+    matriz_dano_parry[2][1] = 33;
+    matriz_dano_parry[2][2] = 36;
+    matriz_dano_parry[2][3] = 39;
+}
+
+void LiberarMatrizDanoParry() {
+    if (matriz_dano_parry == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < qtd_linhas_combo_parry; i++) {
+        free(matriz_dano_parry[i]);
+    }
+
+    free(matriz_dano_parry);
+    matriz_dano_parry = NULL;
+}
+int ObterDanoParry() {
+    if (matriz_dano_parry == NULL) {
+        return 20;
+    }
+
+    return matriz_dano_parry[linha_combo_parry][coluna_combo_parry];
+}
+
+void AumentarComboParry() {
+    if (coluna_combo_parry < qtd_colunas_combo_parry - 1) {
+        coluna_combo_parry++;
+    }
+    else if (linha_combo_parry < qtd_linhas_combo_parry - 1) {
+        linha_combo_parry++;
+        coluna_combo_parry = 0;
+    }
+}
+
+void ReduzirComboParryAoTomarDano() {
+    coluna_combo_parry = 0;
+}
 
 //Aqui estamos criando as variáveis tanto para personagem quanto para os nossos inimigos (cada um com seus respectivos structs, os de letra maiúscula, para marcar do formato para o objeto)
 
@@ -150,9 +282,7 @@ void Boss2(){
     ReiniciarAnimacao(&rose_dying);
     ReiniciarAnimacao(&rose_attack);
 
-    projetil_inimigo.ativo = 0;
-    projetil_inimigo.rebatido = 0;
-    projetil_inimigo.especial = 0;
+    LimparProjeteis(&head);
 
     cooldown_projetil = 0;
     contador_ataques_inimigo = 0;
@@ -197,13 +327,13 @@ void LoadAnimacao (animacao *animacao, const char *pasta, const char *prefixo, i
 
 void CarregarAssets() {
     background = LoadTexture("assets/background/background.png");
-    gameover = LoadTexture("assets/gameover/gameover.jpeg");
-    menu = LoadTexture("assets/menu/menu.jpeg");  
+    gameover = LoadTexture("assets/gameover/gameover.png");
+    menu = LoadTexture("assets/menu/menu.png");  
     intro[0] = LoadTexture("assets/intro/tela1.png");
-    intro[1] = LoadTexture("assets/intro/tela2.jpeg");
-    intro[2] = LoadTexture("assets/intro/tela3.jpeg");
-    intro[3] = LoadTexture("assets/intro/tela4.jpeg");
-    intro[4] = LoadTexture("assets/intro/tela5.jpeg");
+    intro[1] = LoadTexture("assets/intro/tela2.png");
+    intro[2] = LoadTexture("assets/intro/tela3.png");
+    intro[3] = LoadTexture("assets/intro/tela4.png");
+    intro[4] = LoadTexture("assets/intro/tela5.png");
 
     transicao_boss[0] = LoadTexture("assets/transicao/transicao1.png");
     transicao_boss[1] = LoadTexture("assets/transicao/transicao2.png");
@@ -290,6 +420,8 @@ void DescarregarAssets() {
     UnloadMusicStream(track_boss1);
     UnloadMusicStream(track_boss2);
     UnloadMusicStream(track_gameover);
+
+    LiberarMatrizDanoParry();
 }
 }
 
@@ -427,6 +559,11 @@ void TrocarAnimacaoRose(int nova_animacao) {
 
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
 
+    CriarMatrizDanoParry();
+
+    linha_combo_parry = 0;
+    coluna_combo_parry = 0;
+    
     efeito_morte_rose = 0;
     raio_luz_morte_rose = 700.0f;
 
@@ -470,19 +607,11 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
 
-    projetil_inimigo.corpo = (Rectangle){
-        inimigo.posicao.x,
-        ALTURA_PROJETIL_RASTEIRO,
-        LARGURA_PROJETIL,
-        ALTURA_PROJETIL
-    };
+    LimparProjeteis(&head);
     
     //A ideia é que o Boss não comece atirando, ele espera um tempo e começa a atirar
-    
-    projetil_inimigo.velocidade = VELOCIDADE_PROJETIL_FASE1;
-    projetil_inimigo.ativo = 0;
-    projetil_inimigo.rebatido = 0;
-    projetil_inimigo.especial = 0;
+
+    LimparProjeteis(&head);
     cooldown_projetil = TEMPO_COOLDOWN_PROJETIL_FASE1;
 
     tempo_sem_receber_dano = 0;
@@ -503,7 +632,7 @@ void AtualizarMorteRoseComLuz() {
 
     atacando = 0;
     aparando = 0;
-    projetil_inimigo.ativo = 0;
+    LimparProjeteis(&head);
     avisando_ataque_inimigo = 0;
 
     if (!efeito_morte_rose) {
@@ -647,12 +776,14 @@ void AtualizarFadeIntro() {
 }
 
 void AtualizarAnimacaoProjetilInimigo() {
-    if (!projetil_inimigo.ativo) {
+    Projetil_Inimigo *p = PegarProjetilAtual(head);
+
+    if (p == NULL) {
         return;
     }
 
     if (ModoDoJogo == tela_batalha_boss1) {
-        if (projetil_inimigo.rebatido) {
+        if (p->rebatido) {
             AtualizarAnimacao(&projetil_palhaco_parry);
         }
         else {
@@ -660,7 +791,7 @@ void AtualizarAnimacaoProjetilInimigo() {
         }
     }
     else if (ModoDoJogo == tela_batalha_boss2) {
-        if (projetil_inimigo.especial) {
+        if (p->especial) {
             AtualizarAnimacao(&projetil_marionette_especial);
         }
         else {
@@ -864,7 +995,7 @@ void AtualizarJogo(){
 
             //Lógica projétil
 
-            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){ //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
+            if (head == NULL && !avisando_ataque_inimigo && cooldown_projetil <= 0){ //Se acabou o cooldown e o projétil não está ativo, então ele ativa e o Boss dispara
 
                 int ataque_de_rajada = 0; //Aqui é só uma marcação ou variável temporária para dizer que o ataque que está por vir não é do tipo rajada
                 // = 0, ataque normal. Se fosse = 1, seria ataque rajada, mas por enquanto é normal porque falta a condição para coemçar os rajadas.
@@ -898,52 +1029,56 @@ void AtualizarJogo(){
 
                 if (tempo_aviso_ataque_inimigo <= 0){
                     avisando_ataque_inimigo = 0;
-                    projetil_inimigo.ativo = 1;
-                    projetil_inimigo.rebatido = 0;
-                    ReiniciarAnimacao(&projetil_palhaco);
 
-                    projetil_inimigo.corpo.x = inimigo.posicao.x;
-                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
+                    Projetil_Inimigo novo_projetil;
+
+                    novo_projetil.ativo = 1;
+                    novo_projetil.rebatido = 0;
+                    novo_projetil.especial = 0;
+                    novo_projetil.velocidade = velocidade_atual_projetil;
+
+                    novo_projetil.corpo = (Rectangle){
+                        inimigo.posicao.x,
+                        GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX),
+                        LARGURA_PROJETIL,
+                        ALTURA_PROJETIL
+                    };
+
+                    head = AdicionarProjetil(head, novo_projetil);
+
+                    ReiniciarAnimacao(&projetil_palhaco);
                 }
             }
 
             //Se o projétil está ativo, ele anda para a esquerda (eixo x negativo)
 
-            if (projetil_inimigo.ativo){
+            Projetil_Inimigo *p = PegarProjetilAtual(head);
 
-                if (projetil_inimigo.rebatido){
-                    projetil_inimigo.corpo.x += velocidade_atual_projetil; //Vai da esquerda para a direita
+            if (p != NULL){
+
+                if (p->rebatido){
+                    p->corpo.x += velocidade_atual_projetil;
                 }else{
-                    projetil_inimigo.corpo.x -= velocidade_atual_projetil; //Vai da direita para a esquerda
+                    p->corpo.x -= velocidade_atual_projetil;
                 }
 
-                if (!projetil_inimigo.rebatido && projetil_inimigo.corpo.x < -50){
-                    projetil_inimigo.ativo = 0;
-                    projetil_inimigo.rebatido = 0;
-                
-                    if (tiros_rajada_restantes > 0){
-                        cooldown_projetil = INTERVALO_RAJADA_BOSS;
-                    }else{
-                        cooldown_projetil = tempo_cooldown_atual_projetil;
-                    }
-
-                    projetil_inimigo.corpo.x = inimigo.posicao.x;
-                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-                }
-
-                if (projetil_inimigo.rebatido && projetil_inimigo.corpo.x > LARGURA_TELA + 50){
-                    projetil_inimigo.ativo = 0;
-                    projetil_inimigo.rebatido = 0;
+                if (!p->rebatido && p->corpo.x < -50){
+                    LimparProjeteis(&head);
 
                     if (tiros_rajada_restantes > 0){
                         cooldown_projetil = INTERVALO_RAJADA_BOSS;
                     }else{
                         cooldown_projetil = tempo_cooldown_atual_projetil;
                     }
+                }
+                else if (p->rebatido && p->corpo.x > LARGURA_TELA + 50){
+                    LimparProjeteis(&head);
 
-                    projetil_inimigo.corpo.x = inimigo.posicao.x;
-                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-
+                    if (tiros_rajada_restantes > 0){
+                        cooldown_projetil = INTERVALO_RAJADA_BOSS;
+                    }else{
+                        cooldown_projetil = tempo_cooldown_atual_projetil;
+                    }
                 }
             }
 
@@ -957,8 +1092,10 @@ void AtualizarJogo(){
            
             //Lógica da colisão do projétil com o parry, testa se o jogador aparou
 
-            if (aparando && projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
-                projetil_inimigo.rebatido = 1;
+            Projetil_Inimigo *p_parry = PegarProjetilAtual(head);
+
+            if (p_parry != NULL && aparando && !p_parry->rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, p_parry->corpo)){
+                p_parry->rebatido = 1;
                 ReiniciarAnimacao(&projetil_palhaco_parry);
                 tempo_texto_parry = 0.4f;
                 aparando = 0;
@@ -971,16 +1108,17 @@ void AtualizarJogo(){
                 100
             };
 
-            //Quando o projétil rebatido acerta o boss
+            Projetil_Inimigo *p_colisao = PegarProjetilAtual(head);
 
-            if (projetil_inimigo.ativo && projetil_inimigo.rebatido && CheckCollisionRecs(projetil_inimigo.corpo, corpo_inimigo_rebatido)){
-                inimigo.vida -= 20;
+            //Quando o projétil rebatido acerta o boss
+            if (p_colisao != NULL && p_colisao->rebatido && CheckCollisionRecs(p_colisao->corpo, corpo_inimigo_rebatido)){
+                inimigo.vida -= ObterDanoParry();
+                AumentarComboParry();
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
                 TrocarAnimacaoBoss1(2);
 
-                projetil_inimigo.ativo = 0;
-                projetil_inimigo.rebatido = 0;
+                LimparProjeteis(&head);
 
                 float distancia_horizontal_boss = inimigo.posicao.x - jogador.posicao.x;
 
@@ -997,20 +1135,16 @@ void AtualizarJogo(){
                 else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
                 }
-
-                projetil_inimigo.corpo.x = inimigo.posicao.x;
-                projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
             }
 
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
-
-            else if (projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
+            else if (p_colisao != NULL && !p_colisao->rebatido && CheckCollisionCircleRec(jogador.posicao, 20, p_colisao->corpo) && tempo_sem_receber_dano <=0){
                 jogador.vida -= 18;
+                ReduzirComboParryAoTomarDano();
                 tempo_sem_receber_dano = 1.0f;
                 tempo_recebendo_dano_jogador = 0.2f;
 
-                projetil_inimigo.ativo = 0;
-                projetil_inimigo.rebatido = 0;
+                LimparProjeteis(&head);
 
                 float distancia_horizontal_boss = inimigo.posicao.x - jogador.posicao.x;
 
@@ -1027,10 +1161,6 @@ void AtualizarJogo(){
                 else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
                 }
-
-                projetil_inimigo.corpo.x = inimigo.posicao.x;
-                projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-
             }
 
             //Inimigo perdeu ou Jogador perdeu
@@ -1039,7 +1169,7 @@ void AtualizarJogo(){
                 jogador.vida = 0;
                 atacando = 0;
                 aparando = 0;
-                projetil_inimigo.ativo = 0;
+                LimparProjeteis(&head);
                 TrocarAnimacaoRose(4);
             }
 
@@ -1132,7 +1262,7 @@ void AtualizarJogo(){
 
                 atacando = 0;
                 aparando = 0;
-                projetil_inimigo.ativo = 0;
+                LimparProjeteis(&head);
                 avisando_ataque_inimigo = 0;
 
                 if (animacao_atual_boss2 != 4) {
@@ -1331,7 +1461,7 @@ void AtualizarJogo(){
 
             //Lógica projétil
 
-            if (!projetil_inimigo.ativo && !avisando_ataque_inimigo && cooldown_projetil <= 0){
+            if (head == NULL && !avisando_ataque_inimigo && cooldown_projetil <= 0){
                 
                 int ataque_de_rajada = 0;
 
@@ -1394,59 +1524,60 @@ void AtualizarJogo(){
                 if (tempo_aviso_ataque_inimigo <= 0){
                     avisando_ataque_inimigo = 0;
 
-                    projetil_inimigo.ativo = 1;
-                    projetil_inimigo.rebatido = 0;
-                    projetil_inimigo.especial = proximo_projetil_especial;
+                    Projetil_Inimigo novo_projetil;
 
-                    if (projetil_inimigo.especial) {
+                    novo_projetil.ativo = 1;
+                    novo_projetil.rebatido = 0;
+                    novo_projetil.especial = proximo_projetil_especial;
+                    novo_projetil.velocidade = velocidade_atual_projetil;
+
+                    novo_projetil.corpo = (Rectangle){
+                        inimigo.posicao.x,
+                        GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX),
+                        LARGURA_PROJETIL,
+                        ALTURA_PROJETIL
+                    };
+
+                    head = AdicionarProjetil(head, novo_projetil);
+
+                    if (novo_projetil.especial) {
                         ReiniciarAnimacao(&projetil_marionette_especial);
                     }
                     else {
                         ReiniciarAnimacao(&projetil_marionette);
                     }
-
-                    projetil_inimigo.corpo.x = inimigo.posicao.x;
-                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
                 }
             }
 
             //Se o projétil está ativo, ele anda para a esquerda (eixo x negativo)
 
-            if (projetil_inimigo.ativo){
+            Projetil_Inimigo *p2_mov = PegarProjetilAtual(head);
 
-                if (projetil_inimigo.rebatido){
-                    projetil_inimigo.corpo.x += velocidade_atual_projetil; //Vai da esquerda para a direita
+            if (p2_mov != NULL){
+
+                if (p2_mov->rebatido){
+                    p2_mov->corpo.x += velocidade_atual_projetil;
                 }else{
-                    projetil_inimigo.corpo.x -= velocidade_atual_projetil; //Vai da direita para a esquerda
+                    p2_mov->corpo.x -= velocidade_atual_projetil;
                 }
 
-                if (!projetil_inimigo.rebatido && projetil_inimigo.corpo.x < -50){
-                    projetil_inimigo.ativo = 0;
-                    projetil_inimigo.rebatido = 0;
-                
-                    if (tiros_rajada_restantes > 0){
-                        cooldown_projetil = INTERVALO_RAJADA_BOSS;
-                    }else{
-                        cooldown_projetil = tempo_cooldown_atual_projetil;
-                    }
-
-                    projetil_inimigo.corpo.x = inimigo.posicao.x;
-                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-                }
-
-                if (projetil_inimigo.rebatido && projetil_inimigo.corpo.x > LARGURA_TELA + 50){
-                    projetil_inimigo.ativo = 0;
-                    projetil_inimigo.rebatido = 0;
+                if (!p2_mov->rebatido && p2_mov->corpo.x < -50){
+                    LimparProjeteis(&head);
 
                     if (tiros_rajada_restantes > 0){
                         cooldown_projetil = INTERVALO_RAJADA_BOSS;
                     }else{
                         cooldown_projetil = tempo_cooldown_atual_projetil;
                     }
+                }
+                else if (p2_mov->rebatido && p2_mov->corpo.x > LARGURA_TELA + 50){
+                    LimparProjeteis(&head);
 
-                    projetil_inimigo.corpo.x = inimigo.posicao.x;
-                    projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-
+                    if (tiros_rajada_restantes > 0){
+                        cooldown_projetil = INTERVALO_RAJADA_BOSS;
+                    }else{
+                        cooldown_projetil = tempo_cooldown_atual_projetil;
+                    }
                 }
             }
 
@@ -1460,10 +1591,12 @@ void AtualizarJogo(){
            
             //Lógica da colisão do projétil com o parry, testa se o jogador aparou
 
-            if (aparando && projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
-                projetil_inimigo.rebatido = 1;
+            Projetil_Inimigo *p2_parry = PegarProjetilAtual(head);
 
-                if (projetil_inimigo.especial) {
+            if (p2_parry != NULL && aparando && !p2_parry->rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, p2_parry->corpo)){
+                p2_parry->rebatido = 1;
+
+                if (p2_parry->especial) {
                     ReiniciarAnimacao(&projetil_marionette_especial);
                 }
                 else {
@@ -1481,54 +1614,49 @@ void AtualizarJogo(){
                 100
             };
 
-            //Quando o projétil rebatido acerta o boss
+            
 
-            if (projetil_inimigo.ativo && projetil_inimigo.rebatido && CheckCollisionRecs(projetil_inimigo.corpo, corpo_inimigo_rebatido)){
-                inimigo.vida -= 20;
+            Projetil_Inimigo *p2_colisao = PegarProjetilAtual(head);
+
+            //Quando o projétil rebatido acerta o boss
+            if (p2_colisao != NULL && p2_colisao->rebatido && CheckCollisionRecs(p2_colisao->corpo, corpo_inimigo_rebatido)){
+                inimigo.vida -= ObterDanoParry();
+                AumentarComboParry();
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
                 TrocarAnimacaoBoss2(3);
-                
 
-                projetil_inimigo.ativo = 0;
-                projetil_inimigo.rebatido = 0;
+                LimparProjeteis(&head);
 
                 if (tiros_rajada_restantes > 0){
                     cooldown_projetil = INTERVALO_RAJADA_BOSS;
                 }else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
                 }
-
-                projetil_inimigo.corpo.x = inimigo.posicao.x;
-                projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
             }
 
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
-
-            else if (projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, 20, projetil_inimigo.corpo) && tempo_sem_receber_dano <=0){
-               
-                if (projetil_inimigo.especial){
+            else if (p2_colisao != NULL && !p2_colisao->rebatido && CheckCollisionCircleRec(jogador.posicao, 20, p2_colisao->corpo) && tempo_sem_receber_dano <=0){
+            
+                if (p2_colisao->especial){
                     jogador.vida -= 5;
                     tempo_incapacitado_jogador = TEMPO_INCAPACITADO_JOGADOR;
                 }else{
                     jogador.vida -= 10;
                 }
+                
+                ReduzirComboParryAoTomarDano();
 
                 tempo_sem_receber_dano = 1.0f;
                 tempo_recebendo_dano_jogador = 0.2f;
 
-                projetil_inimigo.ativo = 0;
-                projetil_inimigo.rebatido = 0;
+                LimparProjeteis(&head);
 
                 if (tiros_rajada_restantes > 0){
                     cooldown_projetil = INTERVALO_RAJADA_BOSS;
                 }else{
                     cooldown_projetil = tempo_cooldown_atual_projetil;
                 }
-
-                projetil_inimigo.corpo.x = inimigo.posicao.x;
-                projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
-
             }
 
             //Inimigo perdeu ou Jogador perdeu
@@ -1537,7 +1665,7 @@ void AtualizarJogo(){
                 jogador.vida = 0;
                 atacando = 0;
                 aparando = 0;
-                projetil_inimigo.ativo = 0;
+                LimparProjeteis(&head);
                 TrocarAnimacaoRose(4);
             }
 
@@ -1546,7 +1674,7 @@ void AtualizarJogo(){
 
                 atacando = 0;
                 aparando = 0;
-                projetil_inimigo.ativo = 0;
+                LimparProjeteis(&head);
                 avisando_ataque_inimigo = 0;
 
                 TrocarAnimacaoBoss2(4);
@@ -1911,10 +2039,12 @@ void DesenharJogo(){
                 DrawText("APAROU!", jogador.posicao.x - 35, jogador.posicao.y - 70, 20, SKYBLUE);
             }
 
-            if (projetil_inimigo.ativo) {
+            Projetil_Inimigo *p_desenho = PegarProjetilAtual(head);
+
+            if (p_desenho != NULL) {
                 Texture2D frameProjetil;
 
-                if (projetil_inimigo.rebatido) {
+                if (p_desenho->rebatido) {
                     frameProjetil = projetil_palhaco_parry.frames[projetil_palhaco_parry.frame_atual];
                 }
                 else {
@@ -1922,10 +2052,10 @@ void DesenharJogo(){
                 }
 
                 Rectangle destinoProjetil = {
-                    projetil_inimigo.corpo.x - 8,
-                    projetil_inimigo.corpo.y - 5,
-                    projetil_inimigo.corpo.width * 2.2f,
-                    projetil_inimigo.corpo.height * 2.2f
+                    p_desenho->corpo.x - 8,
+                    p_desenho->corpo.y - 5,
+                    p_desenho->corpo.width * 2.2f,
+                    p_desenho->corpo.height * 2.2f
                 };
 
                 DrawTexturePro(
@@ -2224,10 +2354,12 @@ void DesenharJogo(){
                 DrawText("APAROU!", jogador.posicao.x - 35, jogador.posicao.y - 70, 20, SKYBLUE);
             }
 
-            if (projetil_inimigo.ativo) {
+            Projetil_Inimigo *p2_desenho = PegarProjetilAtual(head);
+
+            if (p2_desenho != NULL) {
                 animacao *animacaoProjetil;
 
-                if (projetil_inimigo.especial) {
+                if (p2_desenho->especial) {
                     animacaoProjetil = &projetil_marionette_especial;
                 }
                 else {
@@ -2238,7 +2370,7 @@ void DesenharJogo(){
 
                 Rectangle origemProjetil;
 
-                if (!projetil_inimigo.rebatido) {
+                if (!p2_desenho->rebatido) {
                     origemProjetil = (Rectangle){
                         frameProjetil.width,
                         0,
@@ -2256,10 +2388,10 @@ void DesenharJogo(){
                 }
 
                 Rectangle destinoProjetil = {
-                    projetil_inimigo.corpo.x - 12,
-                    projetil_inimigo.corpo.y - 8,
-                    projetil_inimigo.corpo.width * 2.6f,
-                    projetil_inimigo.corpo.height * 2.6f
+                    p2_desenho->corpo.x - 12,
+                    p2_desenho->corpo.y - 8,
+                    p2_desenho->corpo.width * 2.6f,
+                    p2_desenho->corpo.height * 2.6f
                 };
 
                 DrawTexturePro(

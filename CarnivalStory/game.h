@@ -56,6 +56,7 @@
 
 
 
+
 //==============================================
 // Definição de modos de jogo e telas
 // =============================================
@@ -103,6 +104,11 @@ typedef struct {
     int rebatido;
     int especial;
 } Projetil_Inimigo;
+
+typedef struct projetil {
+    Projetil_Inimigo dados;
+    struct projetil *next;
+} Projetil;
 
 //==============================================
 //             Estrutura de animação
