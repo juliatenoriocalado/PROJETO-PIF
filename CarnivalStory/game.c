@@ -16,6 +16,10 @@ int IndiceCenaFinal = 0; //Contador para marcar e contar as cenas que estão sen
 
 int IndiceCenaTransicaoBoss = 0;
 
+float opacidade_fade_intro = 0.0f;
+int fase_fade_intro = 0;
+int destino_fade_intro = 0;
+
 float opacidade_fade_final = 0.0f;
 int fazendo_fade_final = 0;
 
@@ -42,8 +46,10 @@ Texture2D gameover;
 Texture2D menu;
 Texture2D intro[5];
 int indice_tela_intro = 0;
+Texture2D transicao_boss[3];
 
 Music track_menu;
+Music track_intro;
 Music track_boss1;
 Music track_boss2;
 Music track_gameover;
@@ -54,6 +60,9 @@ int musica_atual = 0;
 animacao boss1_idle;
 animacao boss1_attack;
 animacao boss1_hurt;
+animacao projetil_palhaco;
+animacao projetil_palhaco_parry;
+
 
 int animacao_atual_boss1 = 0;
 
@@ -63,6 +72,9 @@ animacao boss2_special;
 animacao boss2_hurt;
 animacao boss2_dying;
 animacao boss2_intro;
+animacao projetil_marionette;
+animacao projetil_marionette_especial;
+
 
 int animacao_atual_boss2 = 0;
 
@@ -108,6 +120,9 @@ float tempo_texto_parry = 0; //Tempo em que o texto "APAROU!" é exibido
 //==============================================================================================================================================================================================
 void ReiniciarAnimacao(animacao *animacao);
 void TrocarMusica(int nova_musica);
+void IniciarFadeIntro(int destino);
+void AtualizarAnimacaoProjetilInimigo();
+void AtualizarFadeIntro();
 void AtualizarMusicaJogo();
 void Boss2(){
 
@@ -190,12 +205,18 @@ void CarregarAssets() {
     intro[3] = LoadTexture("assets/intro/tela4.jpeg");
     intro[4] = LoadTexture("assets/intro/tela5.jpeg");
 
+    transicao_boss[0] = LoadTexture("assets/transicao/transicao1.png");
+    transicao_boss[1] = LoadTexture("assets/transicao/transicao2.png");
+    transicao_boss[2] = LoadTexture("assets/transicao/transicao3.png");
+
     track_menu = LoadMusicStream("assets/music/track_menu.ogg");
+    track_intro = LoadMusicStream("assets/music/track_intro.ogg");
     track_boss1 = LoadMusicStream("assets/music/track_boss1.ogg");
     track_boss2 = LoadMusicStream("assets/music/track_boss2.ogg");
     track_gameover = LoadMusicStream("assets/music/track_gameover.ogg");
 
     track_menu.looping = true;
+    track_intro.looping = true;
     track_boss1.looping = true;
     track_boss2.looping = true;
     track_gameover.looping = true;
@@ -203,6 +224,8 @@ void CarregarAssets() {
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", 9, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", 9, 0.08f, 0);
     LoadAnimacao(&boss1_hurt, "assets/boss1/hurt", "hurt", 9, 0.08f, 0);
+    LoadAnimacao(&projetil_palhaco, "assets/boss1/projectile", "projectile_clown", 2, 0.08f, 1);
+    LoadAnimacao(&projetil_palhaco_parry, "assets/boss1/projectile_parry", "p_parry", 5, 0.08f, 1);
 
     LoadAnimacao(&boss2_idle, "assets/boss2/idle", "idle", 4, 0.12f, 1);
     LoadAnimacao(&boss2_attack, "assets/boss2/attack", "attack", 9, 0.08f, 0);
@@ -210,6 +233,8 @@ void CarregarAssets() {
     LoadAnimacao(&boss2_hurt, "assets/boss2/hurt", "hurt", 9, 0.08f, 0);
     LoadAnimacao(&boss2_dying, "assets/boss2/dying", "death", 9, 0.10f, 0);
     LoadAnimacao(&boss2_intro, "assets/boss2/intro", "intro", 24, 0.08f, 0);
+    LoadAnimacao(&projetil_marionette, "assets/boss2/projectile", "hand", 9, 0.07f, 1);
+    LoadAnimacao(&projetil_marionette_especial, "assets/boss2/specialhand", "specialhand", 9, 0.07f, 1);
 
     LoadAnimacao(&rose_idle, "assets/rose/idle", "idle", 3, 0.18f, 1);
     LoadAnimacao(&rose_walk, "assets/rose/walk", "walk", 3, 0.12f, 1);
@@ -232,6 +257,8 @@ void DescarregarAssets() {
     UnloadAnimacao(&boss1_idle);
     UnloadAnimacao(&boss1_attack);
     UnloadAnimacao(&boss1_hurt);
+    UnloadAnimacao(&projetil_palhaco);
+    UnloadAnimacao(&projetil_palhaco_parry);
 
     UnloadAnimacao(&boss2_idle);
     UnloadAnimacao(&boss2_attack);
@@ -239,6 +266,8 @@ void DescarregarAssets() {
     UnloadAnimacao(&boss2_hurt);
     UnloadAnimacao(&boss2_dying);
     UnloadAnimacao(&boss2_intro);
+    UnloadAnimacao(&projetil_marionette);
+    UnloadAnimacao(&projetil_marionette_especial);
 
     UnloadAnimacao(&rose_idle);
     UnloadAnimacao(&rose_walk);
@@ -252,8 +281,12 @@ void DescarregarAssets() {
     UnloadTexture(menu);
     for (int i = 0; i < 5; i++) {
     UnloadTexture(intro[i]);
+    for (int i = 0; i < 3; i++) {
+    UnloadTexture(transicao_boss[i]);
+}
 
     UnloadMusicStream(track_menu);
+    UnloadMusicStream(track_intro);
     UnloadMusicStream(track_boss1);
     UnloadMusicStream(track_boss2);
     UnloadMusicStream(track_gameover);
@@ -511,6 +544,9 @@ void TrocarMusica(int nova_musica) {
     else if (musica_atual == 4) {
         StopMusicStream(track_gameover);
     }
+    else if (musica_atual == 5) {
+        StopMusicStream(track_intro);
+    }
 
     musica_atual = nova_musica;
 
@@ -525,6 +561,9 @@ void TrocarMusica(int nova_musica) {
     }
     else if (musica_atual == 4) {
         PlayMusicStream(track_gameover);
+    }
+    else if (musica_atual == 5) {
+        PlayMusicStream(track_intro);
     }
 }
 
@@ -541,18 +580,109 @@ void AtualizarMusicaJogo() {
     else if (musica_atual == 4) {
         UpdateMusicStream(track_gameover);
     }
+    else if (musica_atual == 5) {
+        UpdateMusicStream(track_intro);
+    }
+}
+
+void IniciarFadeIntro(int destino) {
+    if (fase_fade_intro != 0) {
+        return;
+    }
+
+    destino_fade_intro = destino;
+    fase_fade_intro = 1;
+    opacidade_fade_intro = 0.0f;
+}
+
+void AtualizarFadeIntro() {
+    if (fase_fade_intro == 0) {
+        return;
+    }
+
+    if (fase_fade_intro == 1) {
+        opacidade_fade_intro += GetFrameTime() / 0.45f;
+
+        if (opacidade_fade_intro >= 1.0f) {
+            opacidade_fade_intro = 1.0f;
+
+            if (destino_fade_intro == 1) {
+                indice_tela_intro = 0;
+                TrocarMusica(5);
+                ModoDoJogo = tela_animacaoIntro;
+            }
+            else if (destino_fade_intro == 2) {
+                if (indice_tela_intro < 4) {
+                    indice_tela_intro++;
+                }
+            }
+            else if (destino_fade_intro == 3) {
+                InitGame();
+                TrocarMusica(2);
+                ModoDoJogo = tela_batalha_boss1;
+            }
+            else if (destino_fade_intro == 4) {
+                if (IndiceCenaTransicaoBoss < TOTAL_CENAS_TRANSICAO_BOSS - 1) {
+                    IndiceCenaTransicaoBoss++;
+                }
+            }
+            else if (destino_fade_intro == 5) {
+                Boss2();
+                TrocarMusica(3);
+                ModoDoJogo = tela_intro_boss2;
+            }
+
+            fase_fade_intro = 2;
+        }
+    }
+    else if (fase_fade_intro == 2) {
+        opacidade_fade_intro -= GetFrameTime() / 0.45f;
+
+        if (opacidade_fade_intro <= 0.0f) {
+            opacidade_fade_intro = 0.0f;
+            fase_fade_intro = 0;
+            destino_fade_intro = 0;
+        }
+    }
+}
+
+void AtualizarAnimacaoProjetilInimigo() {
+    if (!projetil_inimigo.ativo) {
+        return;
+    }
+
+    if (ModoDoJogo == tela_batalha_boss1) {
+        if (projetil_inimigo.rebatido) {
+            AtualizarAnimacao(&projetil_palhaco_parry);
+        }
+        else {
+            AtualizarAnimacao(&projetil_palhaco);
+        }
+    }
+    else if (ModoDoJogo == tela_batalha_boss2) {
+        if (projetil_inimigo.especial) {
+            AtualizarAnimacao(&projetil_marionette_especial);
+        }
+        else {
+            AtualizarAnimacao(&projetil_marionette);
+        }
+    }
 }
 
 void AtualizarJogo(){
-    
+    AtualizarAnimacaoProjetilInimigo();
     AtualizarMusicaJogo();
+    AtualizarFadeIntro();
+
+    if (fase_fade_intro != 0) {
+        return;
+    }
 
     switch (ModoDoJogo){
 
         case tela_menu:
             if (IsKeyPressed(KEY_ENTER)){
-                indice_tela_intro = 0;
-                ModoDoJogo = tela_animacaoIntro;
+                IniciarFadeIntro(1);
             }
 
             break;
@@ -560,12 +690,10 @@ void AtualizarJogo(){
         case tela_animacaoIntro:
             if (IsKeyPressed(KEY_ENTER)){
                 if (indice_tela_intro < 4){
-                    indice_tela_intro++;
+                    IniciarFadeIntro(2);
                 }
                 else {
-                    InitGame();
-                    TrocarMusica(2);
-                    ModoDoJogo = tela_batalha_boss1;
+                    IniciarFadeIntro(3);
                 }
             }
 
@@ -772,6 +900,7 @@ void AtualizarJogo(){
                     avisando_ataque_inimigo = 0;
                     projetil_inimigo.ativo = 1;
                     projetil_inimigo.rebatido = 0;
+                    ReiniciarAnimacao(&projetil_palhaco);
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -830,6 +959,7 @@ void AtualizarJogo(){
 
             if (aparando && projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
                 projetil_inimigo.rebatido = 1;
+                ReiniciarAnimacao(&projetil_palhaco_parry);
                 tempo_texto_parry = 0.4f;
                 aparando = 0;
             }
@@ -1263,9 +1393,17 @@ void AtualizarJogo(){
 
                 if (tempo_aviso_ataque_inimigo <= 0){
                     avisando_ataque_inimigo = 0;
+
                     projetil_inimigo.ativo = 1;
                     projetil_inimigo.rebatido = 0;
                     projetil_inimigo.especial = proximo_projetil_especial;
+
+                    if (projetil_inimigo.especial) {
+                        ReiniciarAnimacao(&projetil_marionette_especial);
+                    }
+                    else {
+                        ReiniciarAnimacao(&projetil_marionette);
+                    }
 
                     projetil_inimigo.corpo.x = inimigo.posicao.x;
                     projetil_inimigo.corpo.y = GetRandomValue(ALTURA_PROJETIL_MIN, ALTURA_PROJETIL_MAX);
@@ -1324,6 +1462,14 @@ void AtualizarJogo(){
 
             if (aparando && projetil_inimigo.ativo && !projetil_inimigo.rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, projetil_inimigo.corpo)){
                 projetil_inimigo.rebatido = 1;
+
+                if (projetil_inimigo.especial) {
+                    ReiniciarAnimacao(&projetil_marionette_especial);
+                }
+                else {
+                    ReiniciarAnimacao(&projetil_marionette);
+                }
+
                 tempo_texto_parry = 0.4f;
                 aparando = 0;
             }
@@ -1489,13 +1635,12 @@ void AtualizarJogo(){
         case tela_transicao_boss:
 
             if (IsKeyPressed(KEY_ENTER)){
-                IndiceCenaTransicaoBoss++;
-            }
-
-            if (IndiceCenaTransicaoBoss >= TOTAL_CENAS_TRANSICAO_BOSS){
-                Boss2();
-                TrocarMusica(3);
-                ModoDoJogo = tela_intro_boss2;
+                if (IndiceCenaTransicaoBoss < TOTAL_CENAS_TRANSICAO_BOSS - 1) {
+                    IniciarFadeIntro(4);
+                }
+                else {
+                    IniciarFadeIntro(5);
+                }
             }
 
             break;
@@ -1709,13 +1854,6 @@ void DesenharJogo(){
                 DrawRectangleLinesEx(ataque_jogador,2,PINK);
             }
 
-            // Color corInimigo = RED;
-
-            // if (tempo_recebendo_dano_inimigo > 0){
-            //     corInimigo = WHITE;
-            // }
-
-            // DrawRectangleV(inimigo.posicao, (Vector2){80,100}, corInimigo);
             animacao *animacaoBoss = &boss1_idle;
 
             if (animacao_atual_boss1 == 1) {
@@ -1773,13 +1911,31 @@ void DesenharJogo(){
                 DrawText("APAROU!", jogador.posicao.x - 35, jogador.posicao.y - 70, 20, SKYBLUE);
             }
 
-            if (projetil_inimigo.ativo){
-                if (projetil_inimigo.rebatido){
-                    DrawRectangleRec(projetil_inimigo.corpo, SKYBLUE);
-                }else{
-                    DrawRectangleRec(projetil_inimigo.corpo, ORANGE);
+            if (projetil_inimigo.ativo) {
+                Texture2D frameProjetil;
+
+                if (projetil_inimigo.rebatido) {
+                    frameProjetil = projetil_palhaco_parry.frames[projetil_palhaco_parry.frame_atual];
+                }
+                else {
+                    frameProjetil = projetil_palhaco.frames[projetil_palhaco.frame_atual];
                 }
 
+                Rectangle destinoProjetil = {
+                    projetil_inimigo.corpo.x - 8,
+                    projetil_inimigo.corpo.y - 5,
+                    projetil_inimigo.corpo.width * 2.2f,
+                    projetil_inimigo.corpo.height * 2.2f
+                };
+
+                DrawTexturePro(
+                    frameProjetil,
+                    (Rectangle){0, 0, frameProjetil.width, frameProjetil.height},
+                    destinoProjetil,
+                    (Vector2){0, 0},
+                    0,
+                    WHITE
+                );
             }
 
             DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
@@ -2068,18 +2224,52 @@ void DesenharJogo(){
                 DrawText("APAROU!", jogador.posicao.x - 35, jogador.posicao.y - 70, 20, SKYBLUE);
             }
 
-            if (projetil_inimigo.ativo){
+            if (projetil_inimigo.ativo) {
+                animacao *animacaoProjetil;
 
-                if (projetil_inimigo.rebatido){
-                    DrawRectangleRec(projetil_inimigo.corpo, SKYBLUE); //Projétil rebatido
-
-                }else if (projetil_inimigo.especial){
-                    DrawRectangleRec(projetil_inimigo.corpo, PURPLE); //Projétil especial
-
-                }else{
-                    DrawRectangleRec(projetil_inimigo.corpo, ORANGE); //Projétil normal
+                if (projetil_inimigo.especial) {
+                    animacaoProjetil = &projetil_marionette_especial;
+                }
+                else {
+                    animacaoProjetil = &projetil_marionette;
                 }
 
+                Texture2D frameProjetil = animacaoProjetil->frames[animacaoProjetil->frame_atual];
+
+                Rectangle origemProjetil;
+
+                if (!projetil_inimigo.rebatido) {
+                    origemProjetil = (Rectangle){
+                        frameProjetil.width,
+                        0,
+                        -frameProjetil.width,
+                        frameProjetil.height
+                    };
+                }
+                else {
+                    origemProjetil = (Rectangle){
+                        0,
+                        0,
+                        frameProjetil.width,
+                        frameProjetil.height
+                    };
+                }
+
+                Rectangle destinoProjetil = {
+                    projetil_inimigo.corpo.x - 12,
+                    projetil_inimigo.corpo.y - 8,
+                    projetil_inimigo.corpo.width * 2.6f,
+                    projetil_inimigo.corpo.height * 2.6f
+                };
+
+                DrawTexturePro(
+                    frameProjetil,
+                    origemProjetil,
+                    destinoProjetil,
+                    (Vector2){0, 0},
+                    0,
+                    WHITE
+                );
             }
 
             if (tempo_incapacitado_jogador > 0){
@@ -2128,21 +2318,25 @@ void DesenharJogo(){
             }
 
             break;
-
-
-        case tela_transicao_boss:{
-
-            DrawText("BOSS 2 - A MARIONETE",250,80,40,RED);
-
-            DrawRectangle(80,140,640,280,BLACK);
-            DrawRectangleLines(80,140,640,280,WHITE);
-
-            DrawText(textos_transicao_boss[IndiceCenaTransicaoBoss],110,450,20,WHITE);
-            DrawText("ENTER para continuar",180,520,20,GRAY);
-
-            break;
-
         }
+
+
+        case tela_transicao_boss:
+            DrawTexturePro(
+                transicao_boss[IndiceCenaTransicaoBoss],
+                (Rectangle){
+                    0,
+                    0,
+                    transicao_boss[IndiceCenaTransicaoBoss].width,
+                    transicao_boss[IndiceCenaTransicaoBoss].height
+                },
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+
+    break;
 
         case tela_animacaoFinal:
             DrawText("CARNIVAL STORY", 250,80,40,RED);
@@ -2159,22 +2353,29 @@ void DesenharJogo(){
                 }
 
             break;
+               
 
         case tela_GameOver:
             DrawTexturePro(
-            gameover,
-            (Rectangle){0, 0, gameover.width, gameover.height},
-            (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
-            (Vector2){0, 0},
-            0,
-            WHITE
-        );
-
-        DrawText("Pressione ENTER para tentar novamente", 190, 540, 20, WHITE);
+                gameover,
+                (Rectangle){0, 0, gameover.width, gameover.height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
 
             break;
-        }
+    }
 
+    if (fase_fade_intro != 0) {
+        DrawRectangle(
+            0,
+            0,
+            LARGURA_TELA,
+            ALTURA_TELA,
+            Fade(BLACK, opacidade_fade_intro)
+        );
     }
 
 }
