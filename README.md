@@ -29,7 +29,7 @@ Link do vídeo:
 
 Link do repositório:
 
-[COLE_AQUI_O_LINK_DO_GITHUB](COLE_AQUI_O_LINK_DO_GITHUB)
+[COLE_AQUI_O_LINK_DO_GITHUB](https://github.com/juliatenoriocalado/PROJETO-PIF)
 
 # Requisitos
 
