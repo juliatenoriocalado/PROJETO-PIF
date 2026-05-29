@@ -4,6 +4,33 @@ Carnival Story é um jogo desenvolvido em linguagem C utilizando a biblioteca Ra
 
 O jogo foi desenvolvido como projeto acadêmico e segue a proposta de implementação em C, com compilação via terminal. Para a entrega da disciplina, o ambiente recomendado é Linux, MacOS ou WSL. O Windows com MSYS2 também pode ser usado para desenvolvimento e testes.
 
+# Vídeo de demonstração
+
+O vídeo abaixo mostra o jogo sendo executado, incluindo a navegação inicial, as batalhas principais e a tela de vitória.
+
+Link do vídeo no YouTube:
+
+[Assista ao vídeo de demonstração aqui](LinkdoVideo)
+
+# Artefatos da entrega
+
+Este projeto possui os seguintes artefatos solicitados:
+
+- Código fonte disponível no GitHub;
+- Assets necessários para execução do jogo;
+- Instruções de compilação e uso no README;
+- Makefile ou linha de comando para compilação;
+- Vídeo de demonstração do jogo no YouTube;
+- Slides de apresentação enviados pelo Classroom.
+
+Link do vídeo:
+
+[COLE_AQUI_O_LINK_DO_YOUTUBE](COLE_AQUI_O_LINK_DO_YOUTUBE)
+
+Link do repositório:
+
+[COLE_AQUI_O_LINK_DO_GITHUB](COLE_AQUI_O_LINK_DO_GITHUB)
+
 # Requisitos
 
 Para compilar e executar o jogo, é necessário ter:
@@ -57,7 +84,7 @@ Entre na pasta do jogo:
 
     cd PROJETO-PIF/CarnivalStory
 
-# Makefile recomendado
+# Makefile do projeto
 
 Dentro da pasta `CarnivalStory`, crie um arquivo chamado exatamente:
 
