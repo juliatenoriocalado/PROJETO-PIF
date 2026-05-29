@@ -25,11 +25,11 @@ Este projeto possui os seguintes artefatos solicitados:
 
 Link do vídeo:
 
-[COLE_AQUI_O_LINK_DO_YOUTUBE](COLE_AQUI_O_LINK_DO_YOUTUBE)
+[Link Youtube](COLE_AQUI_O_LINK_DO_YOUTUBE)
 
 Link do repositório:
 
-[Repositório do Projeo](https://github.com/juliatenoriocalado/PROJETO-PIF)
+[Repositório do Projeto](https://github.com/juliatenoriocalado/PROJETO-PIF)
 
 # Requisitos
 
