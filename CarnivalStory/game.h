@@ -68,6 +68,7 @@ typedef enum {
     tela_transicao_boss,
     tela_intro_boss2,
     tela_batalha_boss2,
+    tela_vitoria,
     tela_animacaoFinal,
     tela_GameOver
 } Telas;

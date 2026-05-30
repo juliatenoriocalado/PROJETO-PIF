@@ -56,12 +56,15 @@ Texture2D menu;
 Texture2D intro[5];
 int indice_tela_intro = 0;
 Texture2D transicao_boss[3];
+Texture2D victory[3];
+int indice_tela_vitoria = 0;
 
 Music track_menu;
 Music track_intro;
 Music track_boss1;
 Music track_boss2;
 Music track_gameover;
+Music track_victory;
 
 int musica_atual = 0;
 
@@ -201,14 +204,14 @@ void CriarMatrizDanoParry() {
     matriz_dano_parry[0][3] = 19;
 
     matriz_dano_parry[1][0] = 20;
-    matriz_dano_parry[1][1] = 23;
-    matriz_dano_parry[1][2] = 26;
-    matriz_dano_parry[1][3] = 29;
+    matriz_dano_parry[1][1] = 21;
+    matriz_dano_parry[1][2] = 22;
+    matriz_dano_parry[1][3] = 23;
 
-    matriz_dano_parry[2][0] = 30;
-    matriz_dano_parry[2][1] = 33;
-    matriz_dano_parry[2][2] = 36;
-    matriz_dano_parry[2][3] = 39;
+    matriz_dano_parry[2][0] = 24;
+    matriz_dano_parry[2][1] = 25;
+    matriz_dano_parry[2][2] = 28;
+    matriz_dano_parry[2][3] = 30;
 }
 
 void LiberarMatrizDanoParry() {
@@ -283,6 +286,8 @@ void Boss2(){
     ReiniciarAnimacao(&rose_attack);
 
     LimparProjeteis(&head);
+    linha_combo_parry = 0;
+    coluna_combo_parry = 0;
 
     cooldown_projetil = 0;
     contador_ataques_inimigo = 0;
@@ -339,17 +344,23 @@ void CarregarAssets() {
     transicao_boss[1] = LoadTexture("assets/transicao/transicao2.png");
     transicao_boss[2] = LoadTexture("assets/transicao/transicao3.png");
 
+    victory[0] = LoadTexture("assets/victory/victory1.png");
+    victory[1] = LoadTexture("assets/victory/victory2.png");
+    victory[2] = LoadTexture("assets/victory/victory3.png");
+
     track_menu = LoadMusicStream("assets/music/track_menu.ogg");
     track_intro = LoadMusicStream("assets/music/track_intro.ogg");
     track_boss1 = LoadMusicStream("assets/music/track_boss1.ogg");
     track_boss2 = LoadMusicStream("assets/music/track_boss2.ogg");
     track_gameover = LoadMusicStream("assets/music/track_gameover.ogg");
+    track_victory = LoadMusicStream("assets/music/track_victory.ogg");
 
     track_menu.looping = true;
     track_intro.looping = true;
     track_boss1.looping = true;
     track_boss2.looping = true;
     track_gameover.looping = true;
+    track_victory.looping = true;
 
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", 9, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", 9, 0.08f, 0);
@@ -413,6 +424,9 @@ void DescarregarAssets() {
     UnloadTexture(intro[i]);
     for (int i = 0; i < 3; i++) {
     UnloadTexture(transicao_boss[i]);
+    for (int i = 0; i < 3; i++) {
+    UnloadTexture(victory[i]);
+}
 }
 
     UnloadMusicStream(track_menu);
@@ -420,6 +434,7 @@ void DescarregarAssets() {
     UnloadMusicStream(track_boss1);
     UnloadMusicStream(track_boss2);
     UnloadMusicStream(track_gameover);
+    UnloadMusicStream(track_victory);
 
     LiberarMatrizDanoParry();
 }
@@ -676,6 +691,10 @@ void TrocarMusica(int nova_musica) {
     else if (musica_atual == 5) {
         StopMusicStream(track_intro);
     }
+    else if (musica_atual == 6) {
+        StopMusicStream(track_victory);
+    }
+
 
     musica_atual = nova_musica;
 
@@ -694,6 +713,9 @@ void TrocarMusica(int nova_musica) {
     else if (musica_atual == 5) {
         PlayMusicStream(track_intro);
     }
+    else if (musica_atual == 6) {
+        PlayMusicStream(track_victory);
+    }
 }
 
 void AtualizarMusicaJogo() {
@@ -711,6 +733,9 @@ void AtualizarMusicaJogo() {
     }
     else if (musica_atual == 5) {
         UpdateMusicStream(track_intro);
+    }
+    else if (musica_atual == 6) {
+        UpdateMusicStream(track_victory);
     }
 }
 
@@ -1284,7 +1309,8 @@ void AtualizarJogo(){
                         fazendo_fade_final = 0;
 
                         IndiceCenaFinal = 0;
-                        ModoDoJogo = tela_animacaoFinal;
+                        TrocarMusica(6);
+                        ModoDoJogo = tela_vitoria;
                     }
                 }
 
@@ -1768,6 +1794,21 @@ void AtualizarJogo(){
                 }
                 else {
                     IniciarFadeIntro(5);
+                }
+            }
+
+            break;
+        
+        case tela_vitoria:
+
+            if (IsKeyPressed(KEY_ENTER)){
+                indice_tela_vitoria++;
+
+                if (indice_tela_vitoria >= 3){
+                    InitGame();
+                    TrocarMusica(1);
+                    indice_tela_vitoria = 0;
+                    ModoDoJogo = tela_menu;
                 }
             }
 
@@ -2469,6 +2510,18 @@ void DesenharJogo(){
             );
 
     break;
+
+        case tela_vitoria:
+            DrawTexturePro(
+                victory[indice_tela_vitoria],
+                (Rectangle){0, 0, victory[indice_tela_vitoria].width, victory[indice_tela_vitoria].height},
+                (Rectangle){0, 0, LARGURA_TELA, ALTURA_TELA},
+                (Vector2){0, 0},
+                0,
+                WHITE
+            );
+
+            break;
 
         case tela_animacaoFinal:
             DrawText("CARNIVAL STORY", 250,80,40,RED);
