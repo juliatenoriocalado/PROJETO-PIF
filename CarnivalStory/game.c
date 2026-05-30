@@ -198,20 +198,20 @@ void CriarMatrizDanoParry() {
         }
     }
 
-    matriz_dano_parry[0][0] = 10;
-    matriz_dano_parry[0][1] = 13;
-    matriz_dano_parry[0][2] = 16;
-    matriz_dano_parry[0][3] = 19;
+    matriz_dano_parry[0][0] = 8;
+    matriz_dano_parry[0][1] = 10;
+    matriz_dano_parry[0][2] = 12;
+    matriz_dano_parry[0][3] = 14;
 
-    matriz_dano_parry[1][0] = 20;
-    matriz_dano_parry[1][1] = 21;
-    matriz_dano_parry[1][2] = 22;
-    matriz_dano_parry[1][3] = 23;
+    matriz_dano_parry[1][0] = 16;
+    matriz_dano_parry[1][1] = 18;
+    matriz_dano_parry[1][2] = 20;
+    matriz_dano_parry[1][3] = 21;
 
-    matriz_dano_parry[2][0] = 24;
-    matriz_dano_parry[2][1] = 25;
-    matriz_dano_parry[2][2] = 28;
-    matriz_dano_parry[2][3] = 30;
+    matriz_dano_parry[2][0] = 22;
+    matriz_dano_parry[2][1] = 23;
+    matriz_dano_parry[2][2] = 24;
+    matriz_dano_parry[2][3] = 25;
 }
 
 void LiberarMatrizDanoParry() {
@@ -1137,7 +1137,7 @@ void AtualizarJogo(){
 
             //Quando o projétil rebatido acerta o boss
             if (p_colisao != NULL && p_colisao->rebatido && CheckCollisionRecs(p_colisao->corpo, corpo_inimigo_rebatido)){
-                inimigo.vida -= ObterDanoParry();
+                inimigo.vida -= 20;
                 AumentarComboParry();
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
@@ -1164,7 +1164,7 @@ void AtualizarJogo(){
 
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
             else if (p_colisao != NULL && !p_colisao->rebatido && CheckCollisionCircleRec(jogador.posicao, 20, p_colisao->corpo) && tempo_sem_receber_dano <=0){
-                jogador.vida -= 18;
+                jogador.vida -= 12;
                 ReduzirComboParryAoTomarDano();
                 tempo_sem_receber_dano = 1.0f;
                 tempo_recebendo_dano_jogador = 0.2f;
@@ -2109,9 +2109,21 @@ void DesenharJogo(){
                 );
             }
 
-            DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
-            DrawText(TextFormat("Inimigo HP: %d", inimigo.vida), 50,130,20,RED);
+            DrawText(TextFormat("ROSE HP: %d", jogador.vida), 50, 100, 20, WHITE);
 
+            DrawRectangle(50, 130, 300, 14, BLACK);
+            DrawRectangle(51, 131, 298, 12, DARKGRAY);
+
+            float larguraVidaJogador = ((float)jogador.vida / VIDA_MAX_JOGADOR) * 298;
+
+            if (larguraVidaJogador < 0){
+                larguraVidaJogador = 0;
+            }
+
+            DrawRectangle(51, 131, (int)larguraVidaJogador, 12, GREEN);
+            DrawRectangleLines(50, 130, 300, 14, WHITE);
+
+            // Textos de estado do boss
             if (inimigo.vida <= VIDA_MAX_INIMIGO / 2){
                 DrawText("FASE 2",650,50,20,RED);
             }
@@ -2120,14 +2132,32 @@ void DesenharJogo(){
                 DrawText("ENFURECIDO!", 640,80,20,YELLOW);
             }
 
-            DrawRectangle(50,160,300,20,DARKGRAY);
-            float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO) * 300;
+            // Barra de vida do Pagliacci
+            int xBarraBoss = 120;
+            int yBarraBoss = ALTURA_TELA - 55;
+            int larguraBarraBoss = 560;
+            int alturaBarraBoss = 14;
+
+            DrawText("PAGLIACCI", xBarraBoss, yBarraBoss - 24, 18, WHITE);
+
+            DrawRectangle(xBarraBoss, yBarraBoss, larguraBarraBoss, alturaBarraBoss, BLACK);
+            DrawRectangle(xBarraBoss + 1, yBarraBoss + 1, larguraBarraBoss - 2, alturaBarraBoss - 2, DARKGRAY);
+
+            float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO) * (larguraBarraBoss - 2);
+
             if (larguraVidaBoss < 0){
                 larguraVidaBoss = 0;
             }
 
-            DrawRectangle(50,160,larguraVidaBoss,20,RED);
-            DrawRectangleLines(50,160,300,20,WHITE);
+            DrawRectangle(
+                xBarraBoss + 1,
+                yBarraBoss + 1,
+                (int)larguraVidaBoss,
+                alturaBarraBoss - 2,
+                RED
+            );
+
+            DrawRectangleLines(xBarraBoss, yBarraBoss, larguraBarraBoss, alturaBarraBoss, WHITE);
 
             DrawText("Pressione A para atacar", 50,200,20,WHITE);
             
@@ -2449,9 +2479,22 @@ void DesenharJogo(){
                 DrawText("SILENCIADO!", jogador.posicao.x - 35, jogador.posicao.y - 70,20,PURPLE); 
             }
 
-            DrawText(TextFormat("Jogador HP: %d", jogador.vida), 50,100,20,WHITE);
-            DrawText(TextFormat("Inimigo HP: %d", inimigo.vida), 50,130,20,RED);
+            // Vida da Rose
+            DrawText(TextFormat("ROSE HP: %d", jogador.vida), 50, 100, 20, WHITE);
 
+            DrawRectangle(50, 130, 300, 14, BLACK);
+            DrawRectangle(51, 131, 298, 12, DARKGRAY);
+
+            float larguraVidaJogador = ((float)jogador.vida / VIDA_MAX_JOGADOR) * 298;
+
+            if (larguraVidaJogador < 0){
+                larguraVidaJogador = 0;
+            }
+
+            DrawRectangle(51, 131, (int)larguraVidaJogador, 12, GREEN);
+            DrawRectangleLines(50, 130, 300, 14, WHITE);
+
+            // Textos de estado do boss
             if (inimigo.vida <= VIDA_MAX_INIMIGO_BOSS2 / 2){
                 DrawText("FASE 2",650,50,20,RED);
             }
@@ -2460,14 +2503,32 @@ void DesenharJogo(){
                 DrawText("ENFURECIDO!", 640,80,20,YELLOW);
             }
 
-            DrawRectangle(50,160,300,20,DARKGRAY);
-            float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO_BOSS2) * 300;
+            // Barra de vida da Marionette
+            int xBarraBoss = 120;
+            int yBarraBoss = ALTURA_TELA - 55;
+            int larguraBarraBoss = 560;
+            int alturaBarraBoss = 14;
+
+            DrawText("MARIONETTE", xBarraBoss, yBarraBoss - 24, 18, WHITE);
+
+            DrawRectangle(xBarraBoss, yBarraBoss, larguraBarraBoss, alturaBarraBoss, BLACK);
+            DrawRectangle(xBarraBoss + 1, yBarraBoss + 1, larguraBarraBoss - 2, alturaBarraBoss - 2, DARKGRAY);
+
+            float larguraVidaBoss = ((float)inimigo.vida / VIDA_MAX_INIMIGO_BOSS2) * (larguraBarraBoss - 2);
+
             if (larguraVidaBoss < 0){
                 larguraVidaBoss = 0;
             }
 
-            DrawRectangle(50,160,larguraVidaBoss,20,RED);
-            DrawRectangleLines(50,160,300,20,WHITE);
+            DrawRectangle(
+                xBarraBoss + 1,
+                yBarraBoss + 1,
+                (int)larguraVidaBoss,
+                alturaBarraBoss - 2,
+                RED
+            );
+
+            DrawRectangleLines(xBarraBoss, yBarraBoss, larguraBarraBoss, alturaBarraBoss, WHITE);
 
             DrawText("Pressione A para atacar", 50,200,20,WHITE);
 
