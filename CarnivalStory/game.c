@@ -53,7 +53,7 @@ const char *textos_transicao_boss[] = {
 Texture2D background;
 Texture2D gameover;
 Texture2D menu;
-Texture2D intro[5];
+Texture2D intro[6];
 int indice_tela_intro = 0;
 Texture2D transicao_boss[3];
 Texture2D victory[3];
@@ -67,6 +67,26 @@ Music track_gameover;
 Music track_victory;
 
 int musica_atual = 0;
+
+Sound som_clown;
+Sound som_hand;
+Sound som_marionette;
+Sound som_spider;
+Sound som_parry;
+Sound som_hit_rose;
+Sound som_hit_boss;
+
+float cooldown_som_clown = 0.0f;
+float cooldown_som_hand = 0.0f;
+float cooldown_som_spider = 0.0f;
+float cooldown_som_parry = 0.0f;
+float cooldown_som_hit_rose = 0.0f;
+float cooldown_som_hit_boss = 0.0f;
+
+int contador_som_boss1 = 0;
+int intervalo_som_clown = 4;
+
+int som_morte_marionette_tocado = 0;
 
 // ANIMAÇÕES //
 animacao boss1_idle;
@@ -285,6 +305,8 @@ void Boss2(){
     ReiniciarAnimacao(&rose_dying);
     ReiniciarAnimacao(&rose_attack);
 
+    som_morte_marionette_tocado = 0;
+
     LimparProjeteis(&head);
     linha_combo_parry = 0;
     coluna_combo_parry = 0;
@@ -339,6 +361,7 @@ void CarregarAssets() {
     intro[2] = LoadTexture("assets/intro/tela3.png");
     intro[3] = LoadTexture("assets/intro/tela4.png");
     intro[4] = LoadTexture("assets/intro/tela5.png");
+    intro[5] = LoadTexture("assets/intro/tela6.png");
 
     transicao_boss[0] = LoadTexture("assets/transicao/transicao1.png");
     transicao_boss[1] = LoadTexture("assets/transicao/transicao2.png");
@@ -361,6 +384,14 @@ void CarregarAssets() {
     track_boss2.looping = true;
     track_gameover.looping = true;
     track_victory.looping = true;
+
+    som_clown = LoadSound("assets/sfx/clown.ogg");
+    som_hand = LoadSound("assets/sfx/hand.ogg");
+    som_marionette = LoadSound("assets/sfx/marionette.ogg");
+    som_spider = LoadSound("assets/sfx/spider.ogg");
+    som_parry = LoadSound("assets/sfx/parry.ogg");
+    som_hit_rose = LoadSound("assets/sfx/hit_rose.ogg");
+    som_hit_boss = LoadSound("assets/sfx/hit_boss.ogg");
 
     LoadAnimacao(&boss1_idle, "assets/boss1/idle", "idle", 9, 0.12f, 1);
     LoadAnimacao(&boss1_attack, "assets/boss1/attack", "attack", 9, 0.08f, 0);
@@ -420,7 +451,7 @@ void DescarregarAssets() {
     UnloadTexture(background);
     UnloadTexture(gameover);
     UnloadTexture(menu);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
     UnloadTexture(intro[i]);
     for (int i = 0; i < 3; i++) {
     UnloadTexture(transicao_boss[i]);
@@ -435,6 +466,13 @@ void DescarregarAssets() {
     UnloadMusicStream(track_boss2);
     UnloadMusicStream(track_gameover);
     UnloadMusicStream(track_victory);
+    UnloadSound(som_clown);
+    UnloadSound(som_hand);
+    UnloadSound(som_marionette);
+    UnloadSound(som_spider);
+    UnloadSound(som_parry);
+    UnloadSound(som_hit_rose);
+    UnloadSound(som_hit_boss);
 
     LiberarMatrizDanoParry();
 }
@@ -572,6 +610,66 @@ void TrocarAnimacaoRose(int nova_animacao) {
     }
 }
 
+void TocarSomComCooldown(Sound som, float *cooldown, float tempo_cooldown) {
+    if (*cooldown <= 0.0f) {
+        if (IsSoundPlaying(som)) {
+            StopSound(som);
+        }
+
+        PlaySound(som);
+        *cooldown = tempo_cooldown;
+    }
+}
+
+void TocarSomClown() {
+    TocarSomComCooldown(som_clown, &cooldown_som_clown, 0.12f);
+}
+
+void TocarSomHand() {
+    TocarSomComCooldown(som_hand, &cooldown_som_hand, 0.10f);
+}
+
+void TocarSomSpider() {
+    TocarSomComCooldown(som_spider, &cooldown_som_spider, 0.10f);
+}
+
+void TocarSomParry() {
+    TocarSomComCooldown(som_parry, &cooldown_som_parry, 0.10f);
+}
+
+void TocarSomHitRose() {
+    TocarSomComCooldown(som_hit_rose, &cooldown_som_hit_rose, 0.08f);
+}
+
+void TocarSomHitBoss() {
+    TocarSomComCooldown(som_hit_boss, &cooldown_som_hit_boss, 0.12f);
+}
+
+void TocarSomAtaqueBoss1() {
+    contador_som_boss1++;
+
+    if (contador_som_boss1 >= intervalo_som_clown) {
+        TocarSomClown();
+
+        contador_som_boss1 = 0;
+        intervalo_som_clown = GetRandomValue(3, 4);
+    }
+    else {
+        TocarSomSpider();
+    }
+}
+
+void AtualizarCooldownsSons() {
+    float dt = GetFrameTime();
+
+    if (cooldown_som_clown > 0.0f) cooldown_som_clown -= dt;
+    if (cooldown_som_hand > 0.0f) cooldown_som_hand -= dt;
+    if (cooldown_som_spider > 0.0f) cooldown_som_spider -= dt;
+    if (cooldown_som_parry > 0.0f) cooldown_som_parry -= dt;
+    if (cooldown_som_hit_rose > 0.0f) cooldown_som_hit_rose -= dt;
+    if (cooldown_som_hit_boss > 0.0f) cooldown_som_hit_boss -= dt;
+}
+
 void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por exemplo, para o jogo poder começar de fato
 
     CriarMatrizDanoParry();
@@ -621,6 +719,9 @@ void InitGame(){ //Aqui é onde inicializamos todas as variáveis globais, por e
 
     inimigo.vida = VIDA_MAX_INIMIGO;
     inimigo.ativado = 1;
+
+    contador_som_boss1 = 0;
+    intervalo_som_clown = GetRandomValue(3, 4);
 
     LimparProjeteis(&head);
     
@@ -766,7 +867,7 @@ void AtualizarFadeIntro() {
                 ModoDoJogo = tela_animacaoIntro;
             }
             else if (destino_fade_intro == 2) {
-                if (indice_tela_intro < 4) {
+                if (indice_tela_intro < 5) {
                     indice_tela_intro++;
                 }
             }
@@ -784,6 +885,17 @@ void AtualizarFadeIntro() {
                 Boss2();
                 TrocarMusica(3);
                 ModoDoJogo = tela_intro_boss2;
+            }
+            else if (destino_fade_intro == 6) {
+                if (indice_tela_vitoria < 2) {
+                    indice_tela_vitoria++;
+                }
+                else {
+                    InitGame();
+                    TrocarMusica(1);
+                    indice_tela_vitoria = 0;
+                    ModoDoJogo = tela_menu;
+                }
             }
 
             fase_fade_intro = 2;
@@ -829,6 +941,7 @@ void AtualizarJogo(){
     AtualizarAnimacaoProjetilInimigo();
     AtualizarMusicaJogo();
     AtualizarFadeIntro();
+    AtualizarCooldownsSons();
 
     if (fase_fade_intro != 0) {
         return;
@@ -845,7 +958,7 @@ void AtualizarJogo(){
 
         case tela_animacaoIntro:
             if (IsKeyPressed(KEY_ENTER)){
-                if (indice_tela_intro < 4){
+                if (indice_tela_intro < 5){
                     IniciarFadeIntro(2);
                 }
                 else {
@@ -903,6 +1016,7 @@ void AtualizarJogo(){
                 };
 
                 if (CheckCollisionRecs(ataque_jogador, corpo_inimigo)){
+                    TocarSomHitRose();
                     inimigo.vida -= 10;
                     tempo_recebendo_dano_inimigo = 0.15f;
                     tempo_texto_dano = 0.3f;
@@ -1070,7 +1184,7 @@ void AtualizarJogo(){
                     };
 
                     head = AdicionarProjetil(head, novo_projetil);
-
+                    TocarSomAtaqueBoss1();
                     ReiniciarAnimacao(&projetil_palhaco);
                 }
             }
@@ -1121,6 +1235,7 @@ void AtualizarJogo(){
 
             if (p_parry != NULL && aparando && !p_parry->rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, p_parry->corpo)){
                 p_parry->rebatido = 1;
+                TocarSomParry();
                 ReiniciarAnimacao(&projetil_palhaco_parry);
                 tempo_texto_parry = 0.4f;
                 aparando = 0;
@@ -1138,6 +1253,7 @@ void AtualizarJogo(){
             //Quando o projétil rebatido acerta o boss
             if (p_colisao != NULL && p_colisao->rebatido && CheckCollisionRecs(p_colisao->corpo, corpo_inimigo_rebatido)){
                 inimigo.vida -= 20;
+                TocarSomHitRose();
                 AumentarComboParry();
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
@@ -1164,6 +1280,7 @@ void AtualizarJogo(){
 
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
             else if (p_colisao != NULL && !p_colisao->rebatido && CheckCollisionCircleRec(jogador.posicao, 20, p_colisao->corpo) && tempo_sem_receber_dano <=0){
+                TocarSomHitBoss();
                 jogador.vida -= 12;
                 ReduzirComboParryAoTomarDano();
                 tempo_sem_receber_dano = 1.0f;
@@ -1291,6 +1408,11 @@ void AtualizarJogo(){
                 avisando_ataque_inimigo = 0;
 
                 if (animacao_atual_boss2 != 4) {
+                    if (!som_morte_marionette_tocado) {
+                        PlaySound(som_marionette);
+                        som_morte_marionette_tocado = 1;
+                    }
+
                     TrocarAnimacaoBoss2(4);
                 }
 
@@ -1364,6 +1486,7 @@ void AtualizarJogo(){
                 };
 
                 if (CheckCollisionRecs(ataque_jogador, corpo_inimigo)){
+                    TocarSomHitRose();
                     inimigo.vida -= 10;
                     tempo_recebendo_dano_inimigo = 0.15f;
                     tempo_texto_dano = 0.3f;
@@ -1566,6 +1689,8 @@ void AtualizarJogo(){
 
                     head = AdicionarProjetil(head, novo_projetil);
 
+                    TocarSomHand();
+
                     if (novo_projetil.especial) {
                         ReiniciarAnimacao(&projetil_marionette_especial);
                     }
@@ -1621,6 +1746,7 @@ void AtualizarJogo(){
 
             if (p2_parry != NULL && aparando && !p2_parry->rebatido && CheckCollisionCircleRec(jogador.posicao, AREA_PARRY, p2_parry->corpo)){
                 p2_parry->rebatido = 1;
+                TocarSomParry();
 
                 if (p2_parry->especial) {
                     ReiniciarAnimacao(&projetil_marionette_especial);
@@ -1647,6 +1773,7 @@ void AtualizarJogo(){
             //Quando o projétil rebatido acerta o boss
             if (p2_colisao != NULL && p2_colisao->rebatido && CheckCollisionRecs(p2_colisao->corpo, corpo_inimigo_rebatido)){
                 inimigo.vida -= ObterDanoParry();
+                TocarSomHitRose();
                 AumentarComboParry();
                 tempo_recebendo_dano_inimigo = 0.15f;
                 tempo_texto_dano = 0.3f;
@@ -1663,7 +1790,9 @@ void AtualizarJogo(){
 
             //Testa se o jogador tomou dano ou Quando a Rose tomar dano
             else if (p2_colisao != NULL && !p2_colisao->rebatido && CheckCollisionCircleRec(jogador.posicao, 20, p2_colisao->corpo) && tempo_sem_receber_dano <=0){
-            
+                
+                TocarSomHitBoss();
+
                 if (p2_colisao->especial){
                     jogador.vida -= 5;
                     tempo_incapacitado_jogador = TEMPO_INCAPACITADO_JOGADOR;
@@ -1802,19 +1931,12 @@ void AtualizarJogo(){
         case tela_vitoria:
 
             if (IsKeyPressed(KEY_ENTER)){
-                indice_tela_vitoria++;
-
-                if (indice_tela_vitoria >= 3){
-                    InitGame();
-                    TrocarMusica(1);
-                    indice_tela_vitoria = 0;
-                    ModoDoJogo = tela_menu;
-                }
+                IniciarFadeIntro(6);
             }
 
             break;
 
-    }
+            }
 
 }
 void DesenharLuzMorteRose(Vector2 centro, float raio) {
