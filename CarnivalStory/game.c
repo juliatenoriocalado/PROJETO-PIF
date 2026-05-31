@@ -56,7 +56,7 @@ Texture2D menu;
 Texture2D intro[6];
 int indice_tela_intro = 0;
 Texture2D transicao_boss[3];
-Texture2D victory[3];
+Texture2D victory[4];
 int indice_tela_vitoria = 0;
 
 Music track_menu;
@@ -370,6 +370,7 @@ void CarregarAssets() {
     victory[0] = LoadTexture("assets/victory/victory1.png");
     victory[1] = LoadTexture("assets/victory/victory2.png");
     victory[2] = LoadTexture("assets/victory/victory3.png");
+    victory[3] = LoadTexture("assets/victory/victory4.png");
 
     track_menu = LoadMusicStream("assets/music/track_menu.ogg");
     track_intro = LoadMusicStream("assets/music/track_intro.ogg");
@@ -455,7 +456,7 @@ void DescarregarAssets() {
     UnloadTexture(intro[i]);
     for (int i = 0; i < 3; i++) {
     UnloadTexture(transicao_boss[i]);
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
     UnloadTexture(victory[i]);
 }
 }
@@ -887,7 +888,7 @@ void AtualizarFadeIntro() {
                 ModoDoJogo = tela_intro_boss2;
             }
             else if (destino_fade_intro == 6) {
-                if (indice_tela_vitoria < 2) {
+                if (indice_tela_vitoria < 3) {
                     indice_tela_vitoria++;
                 }
                 else {
