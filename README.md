@@ -10,7 +10,7 @@ O vídeo abaixo mostra o jogo sendo executado, incluindo a navegação inicial, 
 
 Link do vídeo no YouTube: https://youtu.be/HcaFyIgmkUc
 
-[Assista ao vídeo de demonstração aqui]([LinkdoVideo](https://youtu.be/HcaFyIgmkUc))
+[Assista ao vídeo de demonstração aqui]([LinkdoVideo](https://youtu.be/xVMB1HlmpVM))
 
 # Artefatos da entrega
 
@@ -25,7 +25,7 @@ Este projeto possui os seguintes artefatos solicitados:
 
 Link do vídeo:
 
-[Link Youtube](COLE_AQUI_O_LINK_DO_YOUTUBE)
+[Link Youtube](https://youtu.be/xVMB1HlmpVM)
 
 Link do repositório:
 
