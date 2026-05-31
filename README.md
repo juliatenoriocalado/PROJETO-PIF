@@ -10,7 +10,7 @@ O vídeo abaixo mostra o jogo sendo executado, incluindo a navegação inicial, 
 
 Link do vídeo no YouTube:
 
-[Assista ao vídeo de demonstração aqui](LinkdoVideo)
+[Assista ao vídeo de demonstração aqui]([LinkdoVideo](https://youtu.be/HcaFyIgmkUc))
 
 # Artefatos da entrega
 
