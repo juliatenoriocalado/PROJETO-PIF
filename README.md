@@ -8,7 +8,7 @@ O jogo foi desenvolvido como projeto acadêmico e segue a proposta de implementa
 
 O vídeo abaixo mostra o jogo sendo executado, incluindo a navegação inicial, as batalhas principais e a tela de vitória.
 
-Link do vídeo no YouTube:
+Link do vídeo no YouTube: https://youtu.be/HcaFyIgmkUc
 
 [Assista ao vídeo de demonstração aqui]([LinkdoVideo](https://youtu.be/HcaFyIgmkUc))
 
